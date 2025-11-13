@@ -7,6 +7,7 @@ app = Flask(__name__)
 my_truck = FoodTruck("CS120 Food Truck", "GSU Campus")
 my_truck.load_staff_from_csv()
 my_truck.load_schedules_from_csv()
+my_truck.load_orders_from_csv()
 
 
 @app.route("/")
@@ -18,6 +19,8 @@ def home():
         schedule_count=len(my_truck.schedules),
     )
 
+
+# ---------- STAFF ROUTES ----------
 
 @app.route("/staff")
 def staff_page():
@@ -32,7 +35,6 @@ def add_staff_form():
 
 @app.route("/add_staff", methods=["POST"])
 def add_staff_submit():
-    # Get form data
     email = request.form["email"]
     password = request.form["password"]
     first = request.form["first"]
@@ -42,12 +44,13 @@ def add_staff_submit():
     dob = request.form["dob"]
     sex = request.form["sex"]
 
-    # Save to CSV and reload
     my_truck.add_staff_to_csv(email, password, first, last, phone, address, dob, sex)
     my_truck.load_staff_from_csv()
 
-    return redirect("/staff")
+    return redirect(url_for("staff_page"))
 
+
+# ---------- SCHEDULE ROUTES ----------
 
 @app.route("/schedules")
 def schedules_page():
@@ -57,7 +60,6 @@ def schedules_page():
 
 @app.route("/book_schedule", methods=["GET"])
 def book_schedule_form():
-    # need staff list to show in dropdown
     my_truck.load_staff_from_csv()
     return render_template("book_schedule.html", staff=my_truck.staff)
 
@@ -70,7 +72,6 @@ def book_schedule_submit():
     staff_email = request.form["staff_email"]
     work_time = request.form["work_time"]
 
-    # find staff name from email
     my_truck.load_staff_from_csv()
     staff_name = None
     for s in my_truck.staff:
@@ -81,7 +82,6 @@ def book_schedule_submit():
     if staff_name is None:
         return "Staff not found. <a href='/book_schedule'>Back</a>"
 
-    # load schedules and try to book (this checks conflicts)
     my_truck.load_schedules_from_csv()
     success = my_truck.book_schedule(
         manager=manager,
@@ -98,7 +98,51 @@ def book_schedule_submit():
             "<a href='/book_schedule'>Back</a>"
         )
 
-    return redirect("/schedules")
+    return redirect(url_for("schedules_page"))
+
+
+# ---------- ORDER (CUSTOMER) ROUTES ----------
+
+@app.route("/order", methods=["GET", "POST"])
+def order_page():
+    # list of menu items (keys from our allergen map)
+    menu_items = list(my_truck.get_menu_allergens().keys())
+
+    if request.method == "POST":
+        customer_name = request.form["customer_name"]
+        customer_email = request.form["customer_email"]
+        item = request.form["item"]
+        allergy_info = request.form["allergy_info"]
+
+        # Save order + allergy check
+        is_safe = my_truck.add_order_to_csv(
+            customer_name, customer_email, item, allergy_info
+        )
+
+        if is_safe:
+            result_message = "✅ Order placed successfully and appears safe based on the allergy information."
+        else:
+            result_message = (
+                "⚠ Order recorded, BUT this item may NOT be safe based on the allergy information. "
+                "Please review before serving."
+            )
+
+        return render_template(
+            "order.html",
+            menu_items=menu_items,
+            result_message=result_message,
+        )
+
+    # GET request – just show blank form
+    return render_template("order.html", menu_items=menu_items)
+
+
+# ---------- ADMIN ORDERS DASHBOARD ----------
+
+@app.route("/admin/orders")
+def admin_orders_page():
+    my_truck.load_orders_from_csv()
+    return render_template("admin_orders.html", orders=my_truck.orders)
 
 
 if __name__ == "__main__":

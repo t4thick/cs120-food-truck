@@ -19,7 +19,9 @@ class FoodTruck:
         # Lists to store related data
         self.staff = []        # list of staff dicts
         self.customers = []    # list of customer names (for now)
-        self.schedules = []    # list of schedule dicts
+        self.schedules = [] 
+        self.orders = []       # list of order dicts
+   # list of schedule dicts
 
     def intro(self):
         """
@@ -172,3 +174,100 @@ class FoodTruck:
 
         print(f"Booked {staff_name} on {date} at {time}.")
         return True
+        # ---------- MENU / ALLERGY HELPERS ----------
+
+    def get_menu_allergens(self):
+        """
+        Simple hard-coded allergen info for menu items.
+        You can expand this later.
+        """
+        return {
+            "Original Chicken Sandwich Combo": ["gluten", "wheat", "egg"],
+            "Wings & Wedges Box": ["gluten", "wheat"],
+            "Family Bucket": ["gluten", "wheat"],
+        }
+
+    def is_order_safe_for_allergy(self, item_name, allergy_text):
+        """
+        Check if an order is safe based on the customer's allergy text.
+        Returns True if safe, False if potentially unsafe.
+        """
+        allergy_text = allergy_text.lower().strip()
+        if allergy_text == "":
+            # Customer reported no allergies
+            return True
+
+        menu_allergens = self.get_menu_allergens()
+        item_allergens = menu_allergens.get(item_name, [])
+
+        # If any allergen word appears in the allergy text, mark unsafe
+        for allergen in item_allergens:
+            if allergen in allergy_text:
+                return False
+        return True
+
+
+        # ---------- ORDERS CSV METHODS ----------
+
+    def add_order_to_csv(self, customer_name, customer_email, item, allergy_info):
+        """
+        Save a customer order to orders.csv and to self.orders.
+        Automatically checks if the order is safe based on allergy.
+        """
+        is_safe = self.is_order_safe_for_allergy(item, allergy_info)
+        is_safe_str = "YES" if is_safe else "NO"
+
+        # Very simple order id = number of existing orders + 1
+        order_id = len(self.orders) + 1
+
+        from datetime import datetime
+        timestamp = datetime.now().isoformat(timespec="seconds")
+
+        # Append to CSV
+        with open("data/orders.csv", mode="a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                order_id,
+                customer_name,
+                customer_email,
+                item,
+                allergy_info,
+                is_safe_str,
+                timestamp
+            ])
+
+        # Add to in-memory list
+        self.orders.append({
+            "order_id": order_id,
+            "customer_name": customer_name,
+            "customer_email": customer_email,
+            "item": item,
+            "allergy_info": allergy_info,
+            "is_safe": is_safe_str,
+            "timestamp": timestamp
+        })
+
+        return is_safe  # True = safe, False = unsafe
+
+    def load_orders_from_csv(self):
+        """
+        Load all orders from orders.csv into self.orders.
+        """
+        self.orders = []
+
+        try:
+            with open("data/orders.csv", mode="r", newline="") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    self.orders.append({
+                        "order_id": row["Order_ID"],
+                        "customer_name": row["Customer_Name"],
+                        "customer_email": row["Customer_Email"],
+                        "item": row["Item"],
+                        "allergy_info": row["Allergy_Info"],
+                        "is_safe": row["Is_Safe"],
+                        "timestamp": row["Timestamp"],
+                    })
+            print("Loaded orders from orders.csv")
+        except FileNotFoundError:
+            print("orders.csv not found — skipping load.")

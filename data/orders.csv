@@ -1,0 +1,4 @@
+Order_ID,Customer_Name,Customer_Email,Item,Allergy_Info,Is_Safe,Timestamp
+1,Test Customer,test@example.com,Original Chicken Sandwich Combo,I am allergic to gluten,NO,2025-11-13T17:22:02
+2,Effah,ryeboah@gsumail.gram.edu,Original Chicken Sandwich Combo,I am allergic to gluten ,NO,2025-11-13T17:57:05
+3,Effah,ryeboah@gsumail.gram.edu,Original Chicken Sandwich Combo,I am allergic to gluten ,NO,2025-11-13T17:57:19
