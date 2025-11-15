@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Order Confirmed</h1>
+
+<p>Thank you, {{ customer_name }}! Your order has been placed.</p>
+<p><strong>Total paid:</strong> ${{ "%.2f"|format(total) }}</p>
+<p>You can now close this page or continue browsing the menu.</p>
+
+<p>
+    <a href="{{ url_for('home') }}" class="button">Back to Home</a>
+    <a href="{{ url_for('menu_page') }}" class="button">Order More Food</a>
+</p>
+
+{% endblock %}

@@ -1,63 +1,87 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>CS120 Food Truck</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
 
-<header>
-    <h1>{{ truck.name }}</h1>
-</header>
-
-<main>
-    <p><strong>Location:</strong> {{ truck.location }}</p>
-
-    <h2>System Summary</h2>
-    <ul>
-        <li>Staff count: {{ staff_count }}</li>
-        <li>Schedules count: {{ schedule_count }}</li>
-    </ul>
-
-    <p>
-        <a href="{{ url_for('staff_page') }}" class="button">View Staff</a>
-        <a href="{{ url_for('schedules_page') }}" class="button">View Schedules</a>
-    </p>
-
-    <p>
-        <a href="{{ url_for('order_page') }}" class="button">Place Customer Order</a>
-        <a href="{{ url_for('admin_orders_page') }}" class="button">Admin Orders</a>
-    </p>
-
-    <hr>
-
-    <!-- Simple menu section like KFC cards -->
-    <section class="menu-section">
-        <h2>Menu</h2>
-        <div class="menu-grid">
-            <div class="menu-card">
-                <h3>Original Chicken Sandwich Combo</h3>
-                <p>Crispy chicken sandwich, fries & drink.</p>
-                <p class="price">$7.99</p>
-                <a href="#" class="button">Order Now</a>
-            </div>
-
-            <div class="menu-card">
-                <h3>Wings & Wedges Box</h3>
-                <p>Spicy wings with seasoned potato wedges.</p>
-                <p class="price">$9.49</p>
-                <a href="#" class="button">Order Now</a>
-            </div>
-
-            <div class="menu-card">
-                <h3>Family Bucket</h3>
-                <p>12 pc chicken, large fries & slaw.</p>
-                <p class="price">$19.99</p>
-                <a href="#" class="button">Order Now</a>
-            </div>
+<div class="hero" style="background-image: url('{{ url_for('static', filename='images/bucket.jpg') }}');">
+    <div class="hero-text">
+        <div class="hero-kicker">Hot & Fresh on Campus</div>
+        <div class="hero-title">{{ truck.name }}</div>
+        <div class="hero-subtitle">
+            Craving crispy chicken, wings, or a quick combo? Order online and pick up at
+            <strong>{{ truck.location }}</strong>. We keep track of allergies so your food is both
+            delicious and safe.
         </div>
-    </section>
-</main>
+        <div class="hero-buttons">
+            <a href="{{ url_for('menu_page') }}" class="button">Order Now</a>
+            <a href="{{ url_for('cart_page') }}" class="button secondary">
+                View Cart{% if cart_count %} ({{ cart_count }}){% endif %}
+            </a>
+        </div>
+        <div class="hero-meta">
+            Staff in system: {{ staff_count }} · Shifts scheduled: {{ schedule_count }}
+        </div>
+    </div>
+    <div class="hero-image">
+        <img src="{{ url_for('static', filename='images/wings.jpg') }}" alt="Food bucket">
+    </div>
+</div>
 
-</body>
-</html>
+<section class="menu-section">
+    <div class="section-header">
+        <div>
+            <h2>Popular Picks</h2>
+            <div class="section-subtitle">Customer favorites from your food truck menu.</div>
+        </div>
+        <a href="{{ url_for('menu_page') }}" class="button secondary">See Full Menu</a>
+    </div>
+
+    <div class="menu-grid">
+        {% for item in featured_items %}
+        <div class="menu-card">
+            <img src="{{ url_for('static', filename='images/' ~ item.image) }}" alt="{{ item.name }}">
+            <h3>{{ item.name }}</h3>
+            <p class="menu-meta">
+                {{ item.category }}{% if item.vegan %} · Vegan{% endif %}
+            </p>
+            <p>{{ item.description }}</p>
+            <div class="menu-tags">
+                {% if item.category == "Non-Veg" %}
+                    <span class="menu-tag">Crispy</span>
+                {% endif %}
+                {% if item.vegan %}
+                    <span class="menu-tag">Plant-Based</span>
+                {% endif %}
+            </div>
+            <p class="price">${{ "%.2f"|format(item.price) }}</p>
+            <form action="{{ url_for('add_to_cart') }}" method="POST">
+                <input type="hidden" name="item_name" value="{{ item.name }}">
+                <input type="hidden" name="price" value="{{ item.price }}">
+                <input type="hidden" name="redirect_to" value="{{ url_for('home') }}">
+                <button type="submit" class="button">Add to Cart</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="info-grid">
+    <div class="info-card">
+        <h3>Today on Campus</h3>
+        <p>{{ truck.location }}</p>
+        <p class="info-stat">Open for lunch & late-night cravings.</p>
+    </div>
+    <div class="info-card">
+        <h3>Allergy-Aware Orders</h3>
+        <p>
+            At checkout, customers can enter allergy information. Orders are flagged in the manager
+            dashboard if they may not be safe.
+        </p>
+    </div>
+    <div class="info-card">
+        <h3>Manager Dashboard</h3>
+        <p class="info-stat">Staff management</p>
+        <p class="info-stat">Shift scheduling (no double booking)</p>
+        <p class="info-stat">Order history with allergy flags</p>
+    </div>
+</section>
+
+{% endblock %}

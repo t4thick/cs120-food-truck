@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Admin Dashboard</h1>
+
+<p>Welcome, {{ admin_email }}. Here is an overview of your food truck system.</p>
+
+<h3>Quick Stats</h3>
+<ul>
+    <li>Total staff: {{ staff_count }}</li>
+    <li>Total schedules: {{ schedule_count }}</li>
+    <li>Total orders: {{ orders_count }}</li>
+    <li>Potentially unsafe orders (allergy flagged): {{ unsafe_orders_count }}</li>
+</ul>
+
+<p>
+    <a href="{{ url_for('staff_page') }}" class="button">Manage Staff</a>
+    <a href="{{ url_for('schedules_page') }}" class="button">Manage Schedules</a>
+    <a href="{{ url_for('admin_orders_page') }}" class="button">View Orders</a>
+</p>
+
+{% endblock %}

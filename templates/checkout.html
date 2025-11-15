@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Checkout</h1>
+</div>
+
+<div class="checkout-layout">
+    <div class="checkout-summary">
+        <h2>Your Order</h2>
+        <p><strong>Items:</strong> {{ items_summary }}</p>
+        <p><strong>Total:</strong> ${{ "%.2f"|format(total) }}</p>
+        <p style="font-size:13px; color:#666; margin-top:10px;">
+            At this step, we record your allergy information. The manager dashboard will highlight
+            any orders that may not be safe to prepare based on our menu allergens.
+        </p>
+    </div>
+
+    <div class="checkout-form">
+        <h2>Customer Details</h2>
+        <form action="{{ url_for('checkout') }}" method="POST">
+            <label>Customer Name:</label><br>
+            <input type="text" name="customer_name" required><br>
+
+            <label>Customer Email:</label><br>
+            <input type="email" name="customer_email" required><br>
+
+            <label>Allergies (if any):</label><br>
+            <textarea name="allergy_info" rows="4"
+                      placeholder="Example: I am allergic to gluten, nuts, milk"></textarea><br>
+
+            <button type="submit" class="button">Place Order</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,40 +1,189 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from foodtruck import FoodTruck
 
 app = Flask(__name__)
 
-# Create and load backend
+# Secret key for sessions (demo only)
+app.secret_key = "cs120-foodtruck-secret"
+
+# Hardcoded admin login
+ADMIN_EMAIL = "admin@foodtruck.com"
+ADMIN_PASSWORD = "admin123"
+
+# Backend instance
 my_truck = FoodTruck("CS120 Food Truck", "GSU Campus")
 my_truck.load_staff_from_csv()
 my_truck.load_schedules_from_csv()
 my_truck.load_orders_from_csv()
 
 
-@app.route("/")
-def home():
-    return render_template(
-        "home.html",
+# ---------- HELPERS ----------
+
+def require_admin():
+    if "admin" not in session:
+        return redirect(url_for("login"))
+    return None
+
+
+def get_cart():
+    return session.get("cart", {})
+
+
+def save_cart(cart):
+    session["cart"] = cart
+
+
+@app.context_processor
+def inject_globals():
+    cart = get_cart()
+    cart_count = sum(item["qty"] for item in cart.values())
+    return dict(
+        is_admin=("admin" in session),
+        admin_email=session.get("admin"),
+        cart_count=cart_count,
         truck=my_truck,
-        staff_count=len(my_truck.staff),
-        schedule_count=len(my_truck.schedules),
     )
 
 
-# ---------- STAFF ROUTES ----------
+# ---------- CUSTOMER FLOW: HOME → MENU → CART → CHECKOUT ----------
+
+@app.route("/")
+def home():
+    featured_items = my_truck.get_menu_items()[:3]
+    return render_template(
+        "home.html",
+        featured_items=featured_items,
+        staff_count=len(my_truck.staff),
+        schedule_count=len(my_truck.schedules),
+        title="Home - CS120 Food Truck",
+    )
+
+
+@app.route("/menu")
+def menu_page():
+    menu_items = my_truck.get_menu_items()
+    return render_template("menu.html", menu_items=menu_items, title="Menu")
+
+
+@app.route("/add_to_cart", methods=["POST"])
+def add_to_cart():
+    item_name = request.form["item_name"]
+    price = float(request.form["price"])
+    redirect_to = request.form.get("redirect_to", url_for("menu_page"))
+
+    cart = get_cart()
+    if item_name in cart:
+        cart[item_name]["qty"] += 1
+    else:
+        cart[item_name] = {"price": price, "qty": 1}
+    save_cart(cart)
+
+    return redirect(redirect_to)
+
+
+@app.route("/cart")
+def cart_page():
+    cart = get_cart()
+    total = sum(item["price"] * item["qty"] for item in cart.values())
+    return render_template("cart.html", cart=cart, total=total, title="Your Cart")
+
+
+@app.route("/cart/clear")
+def clear_cart():
+    save_cart({})
+    return redirect(url_for("cart_page"))
+
+
+@app.route("/checkout", methods=["GET", "POST"])
+def checkout():
+    cart = get_cart()
+    if not cart:
+        return redirect(url_for("menu_page"))
+
+    total = sum(item["price"] * item["qty"] for item in cart.values())
+    items_summary = ", ".join(
+        f"{name} x{item['qty']}" for name, item in cart.items()
+    )
+
+    if request.method == "POST":
+        customer_name = request.form["customer_name"]
+        customer_email = request.form["customer_email"]
+        allergy_info = request.form["allergy_info"]
+
+        my_truck.add_order_to_csv(
+            customer_name, customer_email, items_summary, allergy_info
+        )
+        my_truck.load_orders_from_csv()
+
+        save_cart({})
+
+        return render_template(
+            "checkout_success.html",
+            customer_name=customer_name,
+            total=total,
+            title="Order Confirmed",
+        )
+
+    return render_template(
+        "checkout.html",
+        cart=cart,
+        total=total,
+        items_summary=items_summary,
+        title="Checkout",
+    )
+
+
+# ---------- AUTH (MANAGER LOGIN) ----------
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+
+        if email == ADMIN_EMAIL and password == ADMIN_PASSWORD:
+            session["admin"] = email
+            return redirect(url_for("home"))
+        else:
+            error = "Invalid email or password."
+
+    return render_template("login.html", error=error, title="Manager Login")
+
+
+@app.route("/logout")
+def logout():
+    session.pop("admin", None)
+    return redirect(url_for("home"))
+
+
+# ---------- STAFF (ADMIN) ----------
 
 @app.route("/staff")
 def staff_page():
+    redirect_response = require_admin()
+    if redirect_response:
+        return redirect_response
+
     my_truck.load_staff_from_csv()
-    return render_template("staff.html", staff=my_truck.staff)
+    return render_template("staff.html", staff=my_truck.staff, title="Staff")
 
 
 @app.route("/add_staff", methods=["GET"])
 def add_staff_form():
-    return render_template("add_staff.html")
+    redirect_response = require_admin()
+    if redirect_response:
+        return redirect_response
+
+    return render_template("add_staff.html", title="Add Staff")
 
 
 @app.route("/add_staff", methods=["POST"])
 def add_staff_submit():
+    redirect_response = require_admin()
+    if redirect_response:
+        return redirect_response
+
     email = request.form["email"]
     password = request.form["password"]
     first = request.form["first"]
@@ -50,22 +199,34 @@ def add_staff_submit():
     return redirect(url_for("staff_page"))
 
 
-# ---------- SCHEDULE ROUTES ----------
+# ---------- SCHEDULES (ADMIN) ----------
 
 @app.route("/schedules")
 def schedules_page():
+    redirect_response = require_admin()
+    if redirect_response:
+        return redirect_response
+
     my_truck.load_schedules_from_csv()
-    return render_template("schedules.html", schedules=my_truck.schedules)
+    return render_template("schedules.html", schedules=my_truck.schedules, title="Schedules")
 
 
 @app.route("/book_schedule", methods=["GET"])
 def book_schedule_form():
+    redirect_response = require_admin()
+    if redirect_response:
+        return redirect_response
+
     my_truck.load_staff_from_csv()
-    return render_template("book_schedule.html", staff=my_truck.staff)
+    return render_template("book_schedule.html", staff=my_truck.staff, title="Book Schedule")
 
 
 @app.route("/book_schedule", methods=["POST"])
 def book_schedule_submit():
+    redirect_response = require_admin()
+    if redirect_response:
+        return redirect_response
+
     manager = request.form["manager"]
     date = request.form["date"]
     time = request.form["time"]
@@ -101,48 +262,38 @@ def book_schedule_submit():
     return redirect(url_for("schedules_page"))
 
 
-# ---------- ORDER (CUSTOMER) ROUTES ----------
+# ---------- ADMIN DASHBOARD + ORDERS ----------
 
-@app.route("/order", methods=["GET", "POST"])
-def order_page():
-    # list of menu items (keys from our allergen map)
-    menu_items = list(my_truck.get_menu_allergens().keys())
+@app.route("/admin")
+def admin_dashboard():
+    redirect_response = require_admin()
+    if redirect_response:
+        return redirect_response
 
-    if request.method == "POST":
-        customer_name = request.form["customer_name"]
-        customer_email = request.form["customer_email"]
-        item = request.form["item"]
-        allergy_info = request.form["allergy_info"]
+    my_truck.load_staff_from_csv()
+    my_truck.load_schedules_from_csv()
+    my_truck.load_orders_from_csv()
 
-        # Save order + allergy check
-        is_safe = my_truck.add_order_to_csv(
-            customer_name, customer_email, item, allergy_info
-        )
+    unsafe_count = sum(1 for o in my_truck.orders if o["is_safe"] == "NO")
 
-        if is_safe:
-            result_message = "✅ Order placed successfully and appears safe based on the allergy information."
-        else:
-            result_message = (
-                "⚠ Order recorded, BUT this item may NOT be safe based on the allergy information. "
-                "Please review before serving."
-            )
+    return render_template(
+        "admin_dashboard.html",
+        staff_count=len(my_truck.staff),
+        schedule_count=len(my_truck.schedules),
+        orders_count=len(my_truck.orders),
+        unsafe_orders_count=unsafe_count,
+        title="Admin Dashboard",
+    )
 
-        return render_template(
-            "order.html",
-            menu_items=menu_items,
-            result_message=result_message,
-        )
-
-    # GET request – just show blank form
-    return render_template("order.html", menu_items=menu_items)
-
-
-# ---------- ADMIN ORDERS DASHBOARD ----------
 
 @app.route("/admin/orders")
 def admin_orders_page():
+    redirect_response = require_admin()
+    if redirect_response:
+        return redirect_response
+
     my_truck.load_orders_from_csv()
-    return render_template("admin_orders.html", orders=my_truck.orders)
+    return render_template("admin_orders.html", orders=my_truck.orders, title="Admin Orders")
 
 
 if __name__ == "__main__":
