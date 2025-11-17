@@ -28,7 +28,9 @@
         </a>
         {% if user_email %}
             <a href="{{ url_for('dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('staff_portal') }}">Staff Portal</a>
+            {% if is_staff or is_admin %}
+            <a href="{{ url_for('staff_dashboard') }}">Staff Portal</a>
+            {% endif %}
         {% endif %}
         {% if is_admin %}
             <a href="{{ url_for('admin_dashboard') }}">Admin</a>

@@ -158,6 +158,31 @@ class FoodTruck:
 
     # ---------- STAFF (CSV) ----------
 
+    def _ensure_role_column(self, path="data/users.csv"):
+        exists, readable, writable = self.check_file_permissions(path)
+        if not exists or not readable or not writable:
+            return
+
+        try:
+            with open(path, newline="") as f:
+                reader = csv.DictReader(f)
+                fieldnames = reader.fieldnames or []
+                if "Role" in fieldnames:
+                    return
+                rows = list(reader)
+        except FileNotFoundError:
+            return
+
+        new_fieldnames = fieldnames + ["Role"]
+        for row in rows:
+            row["Role"] = row.get("Role", "staff")
+
+        with open(path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=new_fieldnames)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
+
     def load_staff_from_csv(self, path="data/users.csv"):
         self.staff = []
         try:
@@ -168,6 +193,8 @@ class FoodTruck:
             if not readable:
                 logger.error(f"Users CSV not readable: {path}")
                 return
+
+            self._ensure_role_column(path)
 
             with open(path, newline="") as f:
                 reader = csv.DictReader(f)
@@ -182,6 +209,7 @@ class FoodTruck:
                             "address": row["Address"],
                             "dob": row["DOB"],
                             "sex": row["Sex"],
+                            "role": row.get("Role", "staff"),
                         }
                     )
         except FileNotFoundError:
@@ -201,6 +229,7 @@ class FoodTruck:
         address,
         dob,
         sex,
+        role="staff",
         path="data/users.csv",
     ):
         exists, _, writable = self.check_file_permissions(path)
@@ -211,6 +240,8 @@ class FoodTruck:
         elif not writable:
             logger.error(f"Users CSV not writable: {path}")
             raise PermissionError(f"Users CSV not writable: {path}")
+
+        self._ensure_role_column(path)
 
         with open(path, "a", newline="") as f:
             writer = csv.writer(f)
@@ -224,6 +255,7 @@ class FoodTruck:
                     _sanitize_for_csv(address),
                     _sanitize_for_csv(dob),
                     _sanitize_for_csv(sex),
+                    _sanitize_for_csv(role),
                 ]
             )
 
@@ -237,6 +269,7 @@ class FoodTruck:
                 "address": _sanitize_for_csv(address),
                 "dob": _sanitize_for_csv(dob),
                 "sex": _sanitize_for_csv(sex),
+                "role": _sanitize_for_csv(role),
             }
         )
         global STAFF
@@ -414,7 +447,7 @@ class FoodTruck:
         Sets up CSV files with headers if they don't exist.
         """
         files_config = {
-            "data/users.csv": ["Email", "Password", "First_Name", "Last_Name", "Mobile_Number", "Address", "DOB", "Sex"],
+            "data/users.csv": ["Email", "Password", "First_Name", "Last_Name", "Mobile_Number", "Address", "DOB", "Sex", "Role"],
             "data/schedules.csv": ["Manager", "Date", "Time", "staff_Email", "staff_Name", "work_Time"],
             "data/orders.csv": ["Order_ID", "Customer_Name", "Customer_Email", "Item", "Allergy_Info", "Is_Safe", "Timestamp"]
         }
@@ -553,6 +586,7 @@ class FoodTruck:
             "address": "Address",
             "dob": "DOB",
             "sex": "Sex",
+            "role": "Role",
         }
 
         rows = []
@@ -578,10 +612,12 @@ class FoodTruck:
 
         try:
             with open(path, "w", newline="") as f:
-                fieldnames = ["Email", "Password", "First_Name", "Last_Name", "Mobile_Number", "Address", "DOB", "Sex"]
+                fieldnames = ["Email", "Password", "First_Name", "Last_Name", "Mobile_Number", "Address", "DOB", "Sex", "Role"]
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 for row in rows:
+                    if "Role" not in row:
+                        row["Role"] = "staff"
                     writer.writerow(row)
         except Exception as exc:
             logger.error(f"Error writing users CSV during update: {exc}")

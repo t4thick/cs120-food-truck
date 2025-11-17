@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="staff-layout">
+    <aside class="staff-sidebar">
+        <div class="staff-brand">
+            <div class="staff-logo">I7</div>
+            <div>
+                <p class="brand-title">ITEM7 STAFF</p>
+                <p class="brand-subtitle">Management Portal</p>
+            </div>
+        </div>
+        <nav class="staff-nav">
+            <a href="{{ url_for('staff_dashboard') }}" class="{% if active_tab == 'dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('staff_management') }}" class="{% if active_tab == 'staff' %}active{% endif %}">Staff Management</a>
+            <a href="{{ url_for('staff_schedule') }}" class="{% if active_tab == 'schedule' %}active{% endif %}">Schedule</a>
+            <a href="{{ url_for('staff_profile') }}" class="{% if active_tab == 'profile' %}active{% endif %}">My Profile</a>
+        </nav>
+        <div class="staff-user">
+            <div class="staff-user-avatar">{{ user.first[0]|upper }}</div>
+            <div>
+                <p class="staff-user-name">{{ user.first }} {{ user.last }}</p>
+                <p class="staff-user-role">Staff Member</p>
+            </div>
+        </div>
+    </aside>
+
+    <main class="staff-main">
+        {% block staff_content %}{% endblock %}
+    </main>
+</div>
+
+{% endblock %}
+

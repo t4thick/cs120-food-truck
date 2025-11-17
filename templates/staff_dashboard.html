@@ -1,0 +1,80 @@
+{% extends "staff_layout.html" %}
+{% block staff_content %}
+
+<section class="staff-hero">
+    <div>
+        <p class="hero-label">Item7 Staff Portal</p>
+        <h1>Welcome back, {{ user.first }}!</h1>
+        <p>{{ now().strftime('%A, %B %d, %Y') }} • Manage your team and schedules</p>
+    </div>
+    <img src="{{ url_for('static', filename='images/logo-hero.svg') }}" alt="Item7 badge">
+</section>
+
+<section class="staff-stats">
+    <div class="stat-card">
+        <span>Total Shifts</span>
+        <strong>{{ stats.total_shifts }}</strong>
+        <p>All time</p>
+    </div>
+    <div class="stat-card">
+        <span>Upcoming Shifts</span>
+        <strong>{{ stats.upcoming_shifts }}</strong>
+        <p>Next 30 days</p>
+    </div>
+    <div class="stat-card">
+        <span>Hours Completed</span>
+        <strong>{{ stats.completed_shifts * 4 }}</strong>
+        <p>Estimated</p>
+    </div>
+    <div class="stat-card">
+        <span>Open Slots</span>
+        <strong>{{ stats.next_available_slots }}</strong>
+        <p>Next working day</p>
+    </div>
+</section>
+
+<section class="shift-panels">
+    <div class="panel-card">
+        <div class="panel-header">
+            <h2>Today's Shifts</h2>
+        </div>
+        {% if next_shift and next_shift.date == now().strftime('%Y-%m-%d') %}
+            <div class="panel-body shift-highlight">
+                <p class="shift-time">{{ next_shift.time }}</p>
+                <p class="shift-desc">{{ next_shift.work_time }}</p>
+                <p class="shift-manager">Manager: {{ next_shift.manager }}</p>
+            </div>
+        {% else %}
+            <div class="panel-empty">
+                <span>🕒</span>
+                <p>No shifts scheduled for today</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="panel-card">
+        <div class="panel-header">
+            <h2>Upcoming Shifts</h2>
+        </div>
+        {% if upcoming_schedules %}
+            <ul class="upcoming-list">
+                {% for shift in upcoming_schedules %}
+                    <li>
+                        <div>
+                            <strong>{{ shift.date }}</strong>
+                            <p>{{ shift.time }} · {{ shift.work_time }}</p>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="panel-empty">
+                <span>📅</span>
+                <p>No upcoming shifts</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}
+

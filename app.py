@@ -66,6 +66,16 @@ def require_login():
     return None
 
 
+def require_staff_access():
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not (session.get("is_staff") or "admin" in session):
+        flash("Staff portal is restricted to Item7 staff.", "error")
+        return redirect(url_for("home"))
+    return None
+
+
 @app.context_processor
 def inject_globals():
     cart = get_cart()
@@ -74,6 +84,7 @@ def inject_globals():
     user = my_truck.get_user_details(user_email) if user_email else None
     return dict(
         is_admin=("admin" in session),
+        is_staff=session.get("is_staff"),
         admin_email=session.get("admin"),
         user_email=user_email,
         user_name=session.get("user_name"),
@@ -93,7 +104,9 @@ def home():
         # Admins go to the admin console, staff go to the staff portal
         if "admin" in session:
             return redirect(url_for("admin_dashboard"))
-        return redirect(url_for("staff_portal"))
+        if session.get("is_staff"):
+            return redirect(url_for("staff_dashboard"))
+        # logged-in non-staff users stay on the public site
     
     featured_items = my_truck.get_menu_items()[:4]
     return render_template(
@@ -111,17 +124,19 @@ def menu_page():
     return render_template("menu.html", menu_items=menu_items, title="Menu")
 
 
-@app.route("/staff_portal")
-def staff_portal():
-    login_redirect = require_login()
-    if login_redirect:
-        return login_redirect
+# --- Staff Portal Helpers ---
 
+def build_staff_portal_context():
     user_email = session.get("user_email")
+    if not user_email:
+        return None
+
     user = my_truck.get_user_details(user_email)
     if not user:
-        flash("Account not found. Please sign in again.", "error")
-        return redirect(url_for("login"))
+        return None
+
+    if user.get("role", "staff") != "staff" and "admin" not in session:
+        return None
 
     my_truck.load_schedules_from_csv()
     my_truck.load_staff_from_csv()
@@ -181,11 +196,9 @@ def staff_portal():
         )
 
     staff_preview = my_truck.staff[:4]
+    staff_list = list(my_truck.staff)
 
-    api_url = url_for("api_appointments")
-
-    return render_template(
-        "staff_portal.html",
+    return dict(
         user=user,
         next_shift=next_shift,
         upcoming_schedules=upcoming_schedules[:5],
@@ -194,9 +207,74 @@ def staff_portal():
         stats=stats,
         week_overview=week_overview,
         staff_preview=staff_preview,
-        api_url=api_url,
+        staff_list=staff_list,
         time_slots=TIME_SLOTS,
-        title="Staff Portal - Item7",
+    )
+
+
+@app.route("/staff")
+def staff_portal_root():
+    access_redirect = require_staff_access()
+    if access_redirect:
+        return access_redirect
+    return redirect(url_for("staff_dashboard"))
+
+
+def render_staff_template(template, **extra):
+    ctx = build_staff_portal_context()
+    if ctx is None:
+        flash("Staff portal is restricted to Item7 staff.", "error")
+        return redirect(url_for("home"))
+    ctx.update(extra)
+    ctx.setdefault("api_url", url_for("api_appointments"))
+    return render_template(template, **ctx)
+
+
+@app.route("/staff/dashboard")
+def staff_dashboard():
+    access_redirect = require_staff_access()
+    if access_redirect:
+        return access_redirect
+    return render_staff_template(
+        "staff_dashboard.html",
+        active_tab="dashboard",
+        title="Staff Portal - Dashboard",
+    )
+
+
+@app.route("/staff/management")
+def staff_management():
+    access_redirect = require_staff_access()
+    if access_redirect:
+        return access_redirect
+    return render_staff_template(
+        "staff_management.html",
+        active_tab="staff",
+        title="Staff Portal - Staff Management",
+    )
+
+
+@app.route("/staff/schedule")
+def staff_schedule():
+    access_redirect = require_staff_access()
+    if access_redirect:
+        return access_redirect
+    return render_staff_template(
+        "staff_schedule.html",
+        active_tab="schedule",
+        title="Staff Portal - Schedule",
+    )
+
+
+@app.route("/staff/profile")
+def staff_profile():
+    access_redirect = require_staff_access()
+    if access_redirect:
+        return access_redirect
+    return render_staff_template(
+        "staff_profile.html",
+        active_tab="profile",
+        title="Staff Portal - My Profile",
     )
 
 
@@ -284,8 +362,6 @@ def signup():
         dob = sanitize_text(request.form.get("dob"))
         sex = sanitize_text(request.form.get("sex"))
 
-        account_type = request.form.get("account_type", "staff")
-
         # Check if user already exists
         if my_truck.get_user_details(email):
             flash("Email already registered. Please login instead.", "error")
@@ -296,15 +372,18 @@ def signup():
         try:
             # Hash password before storing
             hashed_password = generate_password_hash(password)
-            my_truck.add_staff_to_csv(email, hashed_password, first, last, phone, address, dob, sex)
+            role_value = "staff" if account_type == "staff" else "customer"
+            my_truck.add_staff_to_csv(email, hashed_password, first, last, phone, address, dob, sex, role=role_value)
             logger.info(f"New user registered: {email}")
             if account_type == "staff":
                 session["user_email"] = email
                 session["user_name"] = f"{first} {last}"
                 session.pop("admin", None)
+                session["is_staff"] = True
                 flash("Registration successful. Welcome to Item7!", "success")
-                return redirect(url_for("staff_portal"))
+                return redirect(url_for("staff_dashboard"))
             else:
+                session.pop("is_staff", None)
                 flash("Registration successful. Please log in to continue.", "success")
                 return redirect(url_for("login"))
         except Exception as e:
@@ -320,7 +399,7 @@ def login():
         # Already logged in: route by role
         if "admin" in session:
             return redirect(url_for("admin_dashboard"))
-        return redirect(url_for("staff_portal"))
+        return redirect(url_for("staff_dashboard"))
     
     error = None
     if request.method == "POST":
@@ -350,6 +429,7 @@ def login():
         if authenticated:
             session["user_email"] = email
             session["user_name"] = f"{user['first']} {user['last']}"
+            session["is_staff"] = user.get("role", "staff") == "staff"
             # Set or clear admin flag based on configured admin emails
             if email.lower() in ADMIN_EMAILS:
                 session["admin"] = email
@@ -360,8 +440,9 @@ def login():
             # Admins go to admin dashboard, staff to the staff management portal
             if "admin" in session:
                 return redirect(url_for("admin_dashboard"))
-            if account_type == "staff":
-                return redirect(url_for("staff_portal"))
+            if session.get("is_staff"):
+                return redirect(url_for("staff_dashboard"))
+            session.pop("is_staff", None)
             return redirect(url_for("home"))
         else:
             error = "Invalid email or password."
@@ -376,6 +457,7 @@ def logout():
     email = session.get("user_email")
     session.pop("user_email", None)
     session.pop("user_name", None)
+    session.pop("is_staff", None)
     session.pop("admin", None)  # Also clear admin session if exists
     logger.info(f"User logged out: {email}")
     return redirect(url_for("home"))
@@ -446,7 +528,7 @@ def add_staff_submit():
     sex = sanitize_text(request.form.get("sex"))
 
     hashed_password = generate_password_hash(password)
-    my_truck.add_staff_to_csv(email, hashed_password, first, last, phone, address, dob, sex)
+    my_truck.add_staff_to_csv(email, hashed_password, first, last, phone, address, dob, sex, role="staff")
     my_truck.load_staff_from_csv()
 
     return redirect(url_for("staff_page"))
