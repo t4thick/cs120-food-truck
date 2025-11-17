@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="hero" style="background-image: url('{{ url_for('static', filename='images/bucket.jpg') }}');">
+<div class="hero">
     <div class="hero-text">
         <div class="hero-kicker">Hot & Fresh on Campus</div>
         <div class="hero-title">{{ truck.name }}</div>
@@ -21,7 +21,7 @@
         </div>
     </div>
     <div class="hero-image">
-        <img src="{{ url_for('static', filename='images/wings.jpg') }}" alt="Food bucket">
+        <img src="{{ url_for('static', filename='images/wings.svg') }}" alt="Delicious wings" onerror="this.src='{{ url_for('static', filename='images/wings.svg') }}'">
     </div>
 </div>
 

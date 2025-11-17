@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title">Create Manager Account</h1>
+    <p class="page-subtitle">
+        One account gives you access to staff scheduling and the internal FT management tools.
+    </p>
+</div>
+
+<div class="form-card">
+    <form action="{{ url_for('signup') }}" method="POST">
+        <label for="email">Email</label><br>
+        <input id="email" type="email" name="email" autocomplete="email" required><br>
+
+        <label for="password">Password</label><br>
+        <input id="password" type="password" name="password" autocomplete="new-password" required><br>
+
+        <label for="first">First Name</label><br>
+        <input id="first" type="text" name="first" required><br>
+
+        <label for="last">Last Name</label><br>
+        <input id="last" type="text" name="last" required><br>
+
+        <label for="phone">Mobile Number</label><br>
+        <input id="phone" type="text" name="phone" required><br>
+
+        <label for="address">Address</label><br>
+        <input id="address" type="text" name="address" required><br>
+
+        <label for="dob">Date of Birth</label><br>
+        <input id="dob" type="text" name="dob" placeholder="01/01/1990" required><br>
+
+        <label for="sex">Sex</label><br>
+        <select id="sex" name="sex" required>
+            <option value="">Select...</option>
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+            <option value="Other">Other</option>
+        </select><br>
+
+        <div class="form-actions">
+            <input type="submit" value="Register" class="button">
+        </div>
+    </form>
+
+    <p class="form-footer-text">
+        Already registered? <a href="{{ url_for('login') }}">Sign in to your dashboard</a>
+    </p>
+</div>
+
+{% endblock %}
+

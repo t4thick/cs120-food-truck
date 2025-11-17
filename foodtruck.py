@@ -1,5 +1,52 @@
 import csv
-from datetime import datetime
+import os
+import logging
+from datetime import datetime, date, timedelta
+
+# Configure logging for the FT management system.
+# NOTE: In a larger app this would typically be configured once in the Flask entrypoint.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("ft_management.log"),
+        logging.StreamHandler(),
+    ],
+)
+logger = logging.getLogger(__name__)
+
+# Constants
+TIME_SLOTS = [
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+]  # 9 AM to 5 PM
+
+WORKING_DAYS = ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]  # Monday excluded
+
+# Global cache of staff for quick lookups when needed.
+STAFF = []
+
+
+def _sanitize_for_csv(value):
+    """
+    Basic input sanitization for CSV fields:
+    - Convert None to empty string
+    - Strip leading/trailing whitespace
+    - Remove newlines/carriage returns to avoid breaking CSV rows
+
+    NOTE: We intentionally keep commas because the csv module handles quoting.
+    """
+    if value is None:
+        return ""
+    text = str(value).strip()
+    return text.replace("\n", " ").replace("\r", " ")
 
 
 class FoodTruck:
@@ -30,7 +77,7 @@ class FoodTruck:
                 "price": 7.99,
                 "category": "Non-Veg",
                 "vegan": False,
-                "image": "burger.jpg",
+                "image": "burger.svg",
                 "allergens": ["gluten", "wheat", "egg"],
             },
             {
@@ -39,7 +86,7 @@ class FoodTruck:
                 "price": 9.49,
                 "category": "Non-Veg",
                 "vegan": False,
-                "image": "wings.jpg",
+                "image": "wings.svg",
                 "allergens": ["gluten", "wheat"],
             },
             {
@@ -48,7 +95,7 @@ class FoodTruck:
                 "price": 19.99,
                 "category": "Non-Veg",
                 "vegan": False,
-                "image": "bucket.jpg",
+                "image": "bucket.svg",
                 "allergens": ["gluten", "wheat"],
             },
             {
@@ -57,7 +104,7 @@ class FoodTruck:
                 "price": 8.49,
                 "category": "Veg",
                 "vegan": True,
-                "image": "veggie.jpg",
+                "image": "veggie.svg",
                 "allergens": ["soy"],
             },
         ]
@@ -105,6 +152,14 @@ class FoodTruck:
     def load_staff_from_csv(self, path="data/users.csv"):
         self.staff = []
         try:
+            exists, readable, _ = self.check_file_permissions(path)
+            if not exists:
+                # initialize_csv_files will create it with headers when needed
+                return
+            if not readable:
+                logger.error(f"Users CSV not readable: {path}")
+                return
+
             with open(path, newline="") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
@@ -121,7 +176,11 @@ class FoodTruck:
                         }
                     )
         except FileNotFoundError:
-            pass
+            logger.warning(f"Users CSV not found at {path}")
+
+        # Keep STAFF constant in sync with the current staff list
+        global STAFF
+        STAFF = list(self.staff)
 
     def add_staff_to_csv(
         self,
@@ -135,28 +194,57 @@ class FoodTruck:
         sex,
         path="data/users.csv",
     ):
+        exists, _, writable = self.check_file_permissions(path)
+        if not exists:
+            # If file is missing here, try to create it with just a header row.
+            logger.warning(f"Users CSV missing when adding staff, attempting re-init: {path}")
+            self.initialize_csv_files()
+        elif not writable:
+            logger.error(f"Users CSV not writable: {path}")
+            raise PermissionError(f"Users CSV not writable: {path}")
+
         with open(path, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([email, password, first, last, phone, address, dob, sex])
+            writer.writerow(
+                [
+                    _sanitize_for_csv(email),
+                    _sanitize_for_csv(password),
+                    _sanitize_for_csv(first),
+                    _sanitize_for_csv(last),
+                    _sanitize_for_csv(phone),
+                    _sanitize_for_csv(address),
+                    _sanitize_for_csv(dob),
+                    _sanitize_for_csv(sex),
+                ]
+            )
 
         self.staff.append(
             {
-                "email": email,
-                "password": password,
-                "first": first,
-                "last": last,
-                "phone": phone,
-                "address": address,
-                "dob": dob,
-                "sex": sex,
+                "email": _sanitize_for_csv(email),
+                "password": _sanitize_for_csv(password),
+                "first": _sanitize_for_csv(first),
+                "last": _sanitize_for_csv(last),
+                "phone": _sanitize_for_csv(phone),
+                "address": _sanitize_for_csv(address),
+                "dob": _sanitize_for_csv(dob),
+                "sex": _sanitize_for_csv(sex),
             }
         )
+        global STAFF
+        STAFF = list(self.staff)
 
     # ---------- SCHEDULES (CSV) ----------
 
     def load_schedules_from_csv(self, path="data/schedules.csv"):
         self.schedules = []
         try:
+            exists, readable, _ = self.check_file_permissions(path)
+            if not exists:
+                return
+            if not readable:
+                logger.error(f"Schedules CSV not readable: {path}")
+                return
+
             with open(path, newline="") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
@@ -188,18 +276,35 @@ class FoodTruck:
             if s["staff_email"] == staff_email and s["date"] == date and s["time"] == time:
                 return False  # already booked
 
+        exists, _, writable = self.check_file_permissions(path)
+        if not exists:
+            logger.warning(f"Schedules CSV missing when booking, attempting re-init: {path}")
+            self.initialize_csv_files()
+        elif not writable:
+            logger.error(f"Schedules CSV not writable: {path}")
+            raise PermissionError(f"Schedules CSV not writable: {path}")
+
         with open(path, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([manager, date, time, staff_email, staff_name, work_time])
+            writer.writerow(
+                [
+                    _sanitize_for_csv(manager),
+                    _sanitize_for_csv(date),
+                    _sanitize_for_csv(time),
+                    _sanitize_for_csv(staff_email),
+                    _sanitize_for_csv(staff_name),
+                    _sanitize_for_csv(work_time),
+                ]
+            )
 
         self.schedules.append(
             {
-                "manager": manager,
-                "date": date,
-                "time": time,
-                "staff_email": staff_email,
-                "staff_name": staff_name,
-                "work_time": work_time,
+                "manager": _sanitize_for_csv(manager),
+                "date": _sanitize_for_csv(date),
+                "time": _sanitize_for_csv(time),
+                "staff_email": _sanitize_for_csv(staff_email),
+                "staff_name": _sanitize_for_csv(staff_name),
+                "work_time": _sanitize_for_csv(work_time),
             }
         )
         return True
@@ -209,6 +314,13 @@ class FoodTruck:
     def load_orders_from_csv(self, path="data/orders.csv"):
         self.orders = []
         try:
+            exists, readable, _ = self.check_file_permissions(path)
+            if not exists:
+                return
+            if not readable:
+                logger.error(f"Orders CSV not readable: {path}")
+                return
+
             with open(path, newline="") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
@@ -240,17 +352,25 @@ class FoodTruck:
         order_id = len(self.orders) + 1
         timestamp = datetime.now().isoformat(timespec="seconds")
 
+        exists, _, writable = self.check_file_permissions(path)
+        if not exists:
+            logger.warning(f"Orders CSV missing when adding order, attempting re-init: {path}")
+            self.initialize_csv_files()
+        elif not writable:
+            logger.error(f"Orders CSV not writable: {path}")
+            raise PermissionError(f"Orders CSV not writable: {path}")
+
         with open(path, "a", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(
                 [
                     order_id,
-                    customer_name,
-                    customer_email,
-                    items_text,
-                    allergy_info,
+                    _sanitize_for_csv(customer_name),
+                    _sanitize_for_csv(customer_email),
+                    _sanitize_for_csv(items_text),
+                    _sanitize_for_csv(allergy_info),
                     is_safe_str,
-                    timestamp,
+                    _sanitize_for_csv(timestamp),
                 ]
             )
 
@@ -267,3 +387,197 @@ class FoodTruck:
         )
 
         return is_safe
+
+    # ---------- HELPER FUNCTIONS ----------
+
+    def check_file_permissions(self, file_path):
+        """
+        Validates file access and permissions.
+        Returns (exists, readable, writable) tuple.
+        """
+        exists = os.path.exists(file_path)
+        readable = os.access(file_path, os.R_OK) if exists else False
+        writable = os.access(file_path, os.W_OK) if exists else False
+        return exists, readable, writable
+
+    def initialize_csv_files(self):
+        """
+        Sets up CSV files with headers if they don't exist.
+        """
+        files_config = {
+            "data/users.csv": ["Email", "Password", "First_Name", "Last_Name", "Mobile_Number", "Address", "DOB", "Sex"],
+            "data/schedules.csv": ["Manager", "Date", "Time", "staff_Email", "staff_Name", "work_Time"],
+            "data/orders.csv": ["Order_ID", "Customer_Name", "Customer_Email", "Item", "Allergy_Info", "Is_Safe", "Timestamp"]
+        }
+
+        for file_path, headers in files_config.items():
+            exists, readable, writable = self.check_file_permissions(file_path)
+            
+            if not exists:
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                try:
+                    with open(file_path, 'w', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(headers)
+                    logger.info(f"Initialized CSV file: {file_path}")
+                except Exception as e:
+                    logger.error(f"Error initializing {file_path}: {e}")
+            elif not readable or not writable:
+                logger.warning(f"File {file_path} exists but has permission issues")
+
+    def get_user_details(self, email):
+        """
+        Retrieves user information by email.
+        Returns user dict or None if not found.
+        """
+        self.load_staff_from_csv()
+        for user in self.staff:
+            if user["email"] == email:
+                return user
+        return None
+
+    def is_time_slot_available(self, staff_email, date_str, time_slot):
+        """
+        Checks appointment slot availability for a specific staff member.
+        Returns True if available, False if booked or invalid (e.g., Monday).
+        """
+        # Validate working day here to enforce business rule at the lowest level
+        try:
+            booking_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            day_name = booking_date.strftime("%A")
+            if day_name not in WORKING_DAYS:
+                return False
+        except ValueError:
+            # Invalid date format is treated as not available
+            return False
+
+        self.load_schedules_from_csv()
+        for schedule in self.schedules:
+            if (schedule["staff_email"] == staff_email and 
+                schedule["date"] == date_str and 
+                schedule["time"] == time_slot):
+                return False
+        return True
+
+    def get_available_slots(self, staff_email, date_str):
+        """
+        Returns list of available time slots for a staff member on a given date.
+        """
+        # Do not return slots for Monday or invalid dates
+        try:
+            booking_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            day_name = booking_date.strftime("%A")
+            if day_name not in WORKING_DAYS:
+                return []
+        except ValueError:
+            return []
+
+        available = []
+        for slot in TIME_SLOTS:
+            if self.is_time_slot_available(staff_email, date_str, slot):
+                available.append(slot)
+        return available
+
+    def book_helper(self, manager, date_str, time_slot, staff_email, work_time):
+        """
+        Handles staff booking logic with validation.
+        Returns (success, message) tuple.
+        """
+        # Validate date is a working day
+        try:
+            booking_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            day_name = booking_date.strftime("%A")
+            if day_name not in WORKING_DAYS:
+                return False, f"{day_name} is not a working day. Working days: {', '.join(WORKING_DAYS)}"
+        except ValueError:
+            return False, "Invalid date format. Use YYYY-MM-DD"
+
+        # Validate time slot
+        if time_slot not in TIME_SLOTS:
+            return False, f"Invalid time slot. Available slots: {', '.join(TIME_SLOTS)}"
+
+        # Check if staff exists
+        staff = self.get_user_details(staff_email)
+        if not staff:
+            return False, "Staff member not found"
+
+        staff_name = f"{staff['first']} {staff['last']}"
+
+        # Check availability
+        if not self.is_time_slot_available(staff_email, date_str, time_slot):
+            return False, "Time slot is already booked for this staff member"
+
+        # Book the schedule
+        success = self.book_schedule(
+            manager=manager,
+            date=date_str,
+            time=time_slot,
+            staff_email=staff_email,
+            staff_name=staff_name,
+            work_time=work_time
+        )
+
+        if success:
+            logger.info(f"Successfully booked schedule: {staff_name} on {date_str} at {time_slot}")
+            return True, "Schedule booked successfully"
+        else:
+            return False, "Failed to book schedule"
+
+    def update_user_in_csv(self, email, updated_fields, path="data/users.csv"):
+        """
+        Update an existing user row in the users CSV.
+
+        `updated_fields` uses internal keys: first, last, phone, address, dob, sex, password (optional).
+        Returns True on success, False if the user was not found or file issues occurred.
+        """
+        exists, readable, writable = self.check_file_permissions(path)
+        if not exists or not readable or not writable:
+            logger.error(f"Cannot update user CSV due to permissions or missing file: {path}")
+            return False
+
+        field_map = {
+            "password": "Password",
+            "first": "First_Name",
+            "last": "Last_Name",
+            "phone": "Mobile_Number",
+            "address": "Address",
+            "dob": "DOB",
+            "sex": "Sex",
+        }
+
+        rows = []
+        user_found = False
+
+        try:
+            with open(path, newline="") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get("Email") == email:
+                        user_found = True
+                        for key, value in updated_fields.items():
+                            if key in field_map and value is not None:
+                                row[field_map[key]] = _sanitize_for_csv(value)
+                    rows.append(row)
+        except Exception as exc:
+            logger.error(f"Error reading users CSV during update: {exc}")
+            return False
+
+        if not user_found:
+            logger.warning(f"Attempted to update non-existent user: {email}")
+            return False
+
+        try:
+            with open(path, "w", newline="") as f:
+                fieldnames = ["Email", "Password", "First_Name", "Last_Name", "Mobile_Number", "Address", "DOB", "Sex"]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for row in rows:
+                    writer.writerow(row)
+        except Exception as exc:
+            logger.error(f"Error writing users CSV during update: {exc}")
+            return False
+
+        # Refresh in-memory staff cache
+        self.load_staff_from_csv()
+        return True

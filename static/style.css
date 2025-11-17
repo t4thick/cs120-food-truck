@@ -1,21 +1,50 @@
 /* ========== GLOBAL ========== */
 
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 * {
     box-sizing: border-box;
 }
 
 body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    font-family: 'Lexend Deca', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     margin: 0;
     padding: 0;
     background-color: #fafafa;
-    color: #222;
+    color: #1a1a1a;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+p {
+    color: #333;
+}
+
+a {
+    color: #d6001c;
 }
 
 main {
     padding: 30px 20px 40px;
     max-width: 1120px;
     margin: 0 auto;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 6px;
+}
+
+.page-subtitle {
+    font-size: 13px;
+    color: #555;
+    margin: 0 0 18px;
+    font-weight: 400;
 }
 
 /* Simple container for page titles */
@@ -44,6 +73,35 @@ nav .brand {
     font-weight: 700;
     color: white;
     letter-spacing: 0.03em;
+}
+
+.brand-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.brand-logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    margin-right: 8px;
+    overflow: hidden;
+}
+
+.brand-logo {
+    max-width: 24px;
+    max-height: 24px;
+    display: block;
+}
+
+.brand-text {
+    font-size: 16px;
 }
 
 nav .nav-links {
@@ -105,16 +163,17 @@ button.button:hover {
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    background: linear-gradient(120deg, #d6001c, #f5533d);
+    background: linear-gradient(135deg, #d6001c 0%, #c5001a 50%, #b30018 100%);
     border-radius: 18px;
-    padding: 24px 26px;
-    color: white;
-    margin-bottom: 28px;
+    padding: 40px 32px;
+    color: #ffffff;
+    margin-bottom: 32px;
     box-shadow: 0 10px 26px rgba(0,0,0,0.25);
     background-size: cover;
     background-position: center;
     position: relative;
     overflow: hidden;
+    min-height: 320px;
 }
 
 .hero::after {
@@ -130,27 +189,35 @@ button.button:hover {
 .hero-text {
     position: relative;
     z-index: 1;
-    max-width: 480px;
+    max-width: 520px;
+    flex: 1 1 400px;
 }
 
 .hero-kicker {
-    font-size: 12px;
+    font-size: 13px;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    opacity: 0.9;
-    margin-bottom: 6px;
+    letter-spacing: 0.15em;
+    color: #ffffff;
+    opacity: 0.95;
+    margin-bottom: 10px;
+    font-weight: 500;
 }
 
 .hero-title {
-    font-size: 32px;
-    font-weight: 800;
-    margin-bottom: 8px;
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #ffffff;
+    line-height: 1.2;
 }
 
 .hero-subtitle {
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 14px;
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #ffffff;
+    opacity: 0.95;
+    font-weight: 400;
 }
 
 .hero-buttons {
@@ -162,20 +229,27 @@ button.button:hover {
 }
 
 .hero-meta {
-    font-size: 12px;
+    font-size: 13px;
+    color: #ffffff;
     opacity: 0.9;
-    margin-top: 14px;
+    margin-top: 16px;
+    font-weight: 400;
 }
 
 .hero-image {
     position: relative;
     z-index: 1;
+    flex: 0 0 auto;
+    margin-left: 20px;
 }
 
 .hero-image img {
-    max-width: 290px;
+    max-width: 320px;
+    width: 100%;
+    height: auto;
     border-radius: 16px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    object-fit: cover;
 }
 
 /* ========== SECTIONS ========== */
@@ -193,7 +267,8 @@ button.button:hover {
 
 .section-subtitle {
     font-size: 13px;
-    color: #666;
+    color: #555;
+    font-weight: 400;
 }
 
 /* ========== MENU CARDS ========== */
@@ -236,16 +311,20 @@ button.button:hover {
 .menu-card h3 {
     margin: 0;
     font-size: 17px;
+    color: #1a1a1a;
+    font-weight: 600;
 }
 
 .menu-card p {
     margin: 4px 0;
     font-size: 13px;
+    color: #333;
 }
 
 .menu-meta {
     font-size: 12px;
-    color: #777;
+    color: #666;
+    font-weight: 400;
 }
 
 .menu-tags {
@@ -266,6 +345,7 @@ button.button:hover {
     font-weight: 700;
     margin-top: 8px;
     font-size: 15px;
+    color: #d6001c;
 }
 
 /* ========== INFO CARD (HOME BOTTOM) ========== */
@@ -289,11 +369,19 @@ button.button:hover {
 .info-card h3 {
     margin-top: 0;
     margin-block-end: 6px;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.info-card p {
+    color: #333;
+    margin: 6px 0;
 }
 
 .info-stat {
     font-size: 13px;
     margin: 2px 0;
+    color: #555;
 }
 
 /* ========== TABLES (ADMIN, CART) ========== */
@@ -315,6 +403,20 @@ th, td {
     padding: 8px;
     text-align: left;
     font-size: 13px;
+    color: #1a1a1a;
+}
+
+th {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+td {
+    color: #333;
+}
+
+.table-wrapper {
+    margin-top: 12px;
 }
 
 /* ========== CART LAYOUT ========== */
@@ -341,6 +443,13 @@ th, td {
 .cart-summary h2 {
     margin-block-start: 0;
     margin-block-end: 8px;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.cart-summary p {
+    color: #333;
+    margin: 8px 0;
 }
 
 /* ========== CHECKOUT LAYOUT ========== */
@@ -359,6 +468,20 @@ th, td {
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
 
+.checkout-summary h2 {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.checkout-summary p {
+    color: #333;
+}
+
+.checkout-form h2 {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
 .checkout-form {
     flex: 1.7 1 320px;
     background: white;
@@ -371,21 +494,128 @@ th, td {
 
 label {
     font-size: 13px;
+    color: #1a1a1a;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
 }
 
 input[type="text"],
 input[type="email"],
+input[type="password"],
+input[type="date"],
+select,
 textarea {
     inline-size: 100%;
-    padding: 8px;
-    font-size: 13px;
-    border: 1px solid #ddd;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
     border-radius: 6px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    color: #1a1a1a;
+    background-color: #fff;
+    font-family: 'Lexend Deca', sans-serif;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #d6001c;
+    box-shadow: 0 0 0 2px rgba(214, 0, 28, 0.1);
 }
 
 textarea {
     resize: vertical;
+}
+
+.form-card {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    max-width: 520px;
+}
+
+.form-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.form-footer-text {
+    font-size: 13px;
+    margin-top: 12px;
+    color: #555;
+}
+
+.form-footer-text a {
+    color: #d6001c;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.form-footer-text a:hover {
+    text-decoration: underline;
+}
+
+.pill-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background-color: #f3f3f3;
+    font-size: 11px;
+    color: #555;
+}
+
+.flash-container {
+    margin: 10px 0 18px;
+}
+
+.flash {
+    padding: 10px 12px;
+    margin: 6px 0;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.flash-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.flash-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.flash-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+    gap: 20px;
+    margin-top: 18px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.card h2 {
+    margin: 0 0 6px;
+    font-size: 16px;
 }
 
 /* ========== RESPONSIVE ========== */
@@ -398,10 +628,27 @@ textarea {
     .hero {
         flex-direction: column;
         align-items: flex-start;
+        padding: 28px 20px;
+        min-height: auto;
+    }
+
+    .hero-text {
+        max-width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .hero-title {
+        font-size: 32px;
     }
 
     .hero-image {
-        margin-top: 12px;
+        margin-top: 16px;
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .hero-image img {
+        max-width: 100%;
     }
 
     .menu-grid {
@@ -411,5 +658,15 @@ textarea {
     .cart-layout,
     .checkout-layout {
         flex-direction: column;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
 }

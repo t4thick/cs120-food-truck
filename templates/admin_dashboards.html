@@ -1,22 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Admin Dashboard</h1>
+<div class="page-header">
+    <h1 class="page-title">Admin Dashboard</h1>
+    <span class="pill-badge">Signed in as {{ admin_email }}</span>
+</div>
 
-<p>Welcome, {{ admin_email }}. Here is an overview of your food truck system.</p>
+<div class="dashboard-grid">
+    <section class="card">
+        <h2>System Overview</h2>
+        <p class="section-subtitle">High-level snapshot of staff, schedules, and orders.</p>
+        <ul style="list-style:none; padding-left:0; font-size:13px;">
+            <li><strong>Total staff:</strong> {{ staff_count }}</li>
+            <li><strong>Total schedules:</strong> {{ schedule_count }}</li>
+            <li><strong>Total orders:</strong> {{ orders_count }}</li>
+            <li><strong>Allergy-flagged orders:</strong> {{ unsafe_orders_count }}</li>
+        </ul>
+    </section>
 
-<h3>Quick Stats</h3>
-<ul>
-    <li>Total staff: {{ staff_count }}</li>
-    <li>Total schedules: {{ schedule_count }}</li>
-    <li>Total orders: {{ orders_count }}</li>
-    <li>Potentially unsafe orders (allergy flagged): {{ unsafe_orders_count }}</li>
-</ul>
-
-<p>
-    <a href="{{ url_for('staff_page') }}" class="button">Manage Staff</a>
-    <a href="{{ url_for('schedules_page') }}" class="button">Manage Schedules</a>
-    <a href="{{ url_for('admin_orders_page') }}" class="button">View Orders</a>
-</p>
+    <section class="card">
+        <h2>Quick Actions</h2>
+        <p class="section-subtitle">Jump directly into common admin workflows.</p>
+        <div class="form-actions">
+            <a href="{{ url_for('staff_page') }}" class="button">Manage Staff</a>
+            <a href="{{ url_for('schedules_page') }}" class="button">Manage Schedules</a>
+            <a href="{{ url_for('admin_orders_page') }}" class="button secondary">Review Orders</a>
+        </div>
+    </section>
+</div>
 
 {% endblock %}
