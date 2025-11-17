@@ -10,8 +10,8 @@ app = Flask(__name__)
 # TODO: In production this MUST come from an environment variable and the app should be served over HTTPS.
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
 
-# Backend instance
-my_truck = FoodTruck("CS120 Food Truck", "GSU Campus")
+# Backend instance (rename brand)
+my_truck = FoodTruck("Item7 Food Truck", "GSU Campus")
 
 # Initialize CSV files on startup
 my_truck.initialize_csv_files()

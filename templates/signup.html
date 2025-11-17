@@ -1,52 +1,72 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="page-header">
-    <h1 class="page-title">Create Manager Account</h1>
-    <p class="page-subtitle">
-        One account gives you access to staff scheduling and the internal FT management tools.
-    </p>
-</div>
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h1 class="auth-title">Create your Item7 account</h1>
+        <p class="auth-subtitle">
+            Set up access so you can schedule staff, manage profiles, and keep service running smoothly.
+        </p>
 
-<div class="form-card">
-    <form action="{{ url_for('signup') }}" method="POST">
-        <label for="email">Email</label><br>
-        <input id="email" type="email" name="email" autocomplete="email" required><br>
+        <form action="{{ url_for('signup') }}" method="POST">
+            <label for="email">Work email</label>
+            <input id="email" type="email" name="email" autocomplete="email" placeholder="you@item7.com" required>
 
-        <label for="password">Password</label><br>
-        <input id="password" type="password" name="password" autocomplete="new-password" required><br>
+            <label for="password">Password</label>
+            <input id="password" type="password" name="password" autocomplete="new-password" placeholder="Choose a secure password" required>
 
-        <label for="first">First Name</label><br>
-        <input id="first" type="text" name="first" required><br>
+            <div class="auth-grid">
+                <div>
+                    <label for="first">First name</label>
+                    <input id="first" type="text" name="first" required>
+                </div>
+                <div>
+                    <label for="last">Last name</label>
+                    <input id="last" type="text" name="last" required>
+                </div>
+            </div>
 
-        <label for="last">Last Name</label><br>
-        <input id="last" type="text" name="last" required><br>
+            <label for="phone">Mobile number</label>
+            <input id="phone" type="text" name="phone" placeholder="(555) 123-4567" required>
 
-        <label for="phone">Mobile Number</label><br>
-        <input id="phone" type="text" name="phone" required><br>
+            <label for="address">Address</label>
+            <input id="address" type="text" name="address" placeholder="123 Market Street" required>
 
-        <label for="address">Address</label><br>
-        <input id="address" type="text" name="address" required><br>
+            <div class="auth-grid">
+                <div>
+                    <label for="dob">Date of birth</label>
+                    <input id="dob" type="text" name="dob" placeholder="MM/DD/YYYY" required>
+                </div>
+                <div>
+                    <label for="sex">Sex</label>
+                    <select id="sex" name="sex" required>
+                        <option value="">Select...</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
 
-        <label for="dob">Date of Birth</label><br>
-        <input id="dob" type="text" name="dob" placeholder="01/01/1990" required><br>
+            <div class="form-actions">
+                <button type="submit" class="button">Create account</button>
+            </div>
+        </form>
 
-        <label for="sex">Sex</label><br>
-        <select id="sex" name="sex" required>
-            <option value="">Select...</option>
-            <option value="M">Male</option>
-            <option value="F">Female</option>
-            <option value="Other">Other</option>
-        </select><br>
+        <p class="form-footer-text">
+            Already have access? <a href="{{ url_for('login') }}">Login here</a>
+        </p>
+    </div>
 
-        <div class="form-actions">
-            <input type="submit" value="Register" class="button">
-        </div>
-    </form>
-
-    <p class="form-footer-text">
-        Already registered? <a href="{{ url_for('login') }}">Sign in to your dashboard</a>
-    </p>
+    <div class="auth-side-card">
+        <h2>Why Item7?</h2>
+        <ul>
+            <li>Centralized staff scheduling</li>
+            <li>Live availability tracking</li>
+            <li>Safe order workflows</li>
+        </ul>
+        <p class="auth-note">Accounts require approval. Contact your lead if you need help signing up.</p>
+    </div>
 </div>
 
 {% endblock %}
