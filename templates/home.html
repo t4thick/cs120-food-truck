@@ -101,12 +101,7 @@
     <div class="section-header">
         <div>
             <h2>🎉 Special Deals & Promotions</h2>
-            <div class="section-subtitle">Check out our latest offers and follow us on Instagram for more!</div>
-        </div>
-        <div class="social-links">
-            <a href="https://www.instagram.com/CHARLESS_XN" target="_blank" rel="noopener noreferrer" class="social-link" title="Follow us on Instagram">
-                📷 Follow @CHARLESS_XN
-            </a>
+            <div class="section-subtitle">Check out our latest offers and promotions!</div>
         </div>
     </div>
     
@@ -121,19 +116,16 @@
                 <div class="deal-discount">
                     <span class="discount-amount">{{ deal.discount }}</span>
                 </div>
-                <a href="https://www.instagram.com/CHARLESS_XN" target="_blank" rel="noopener noreferrer" class="deal-cta">
-                    View on Instagram →
-                </a>
+                <div class="deal-cta" style="color: #d6001c; font-weight: 600;">
+                    🔥 Limited Time Offer
+                </div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
     <div class="no-deals">
-        <p>No active deals at the moment. Check back soon or follow us on Instagram for updates!</p>
-        <a href="https://www.instagram.com/CHARLESS_XN" target="_blank" rel="noopener noreferrer" class="button">
-            📷 Follow @CHARLESS_XN on Instagram
-        </a>
+        <p>No active deals at the moment. Check back soon for special offers!</p>
     </div>
     {% endif %}
 </section>
