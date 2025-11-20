@@ -1,0 +1,2 @@
+Email,Password,First_Name,Last_Name,Mobile_Number,Address,DOB,Sex,Role,Verified
+charlesozoke2025@gmail.com,pbkdf2:sha256:1000000$uhFI45KgUeRHTOGC$415ad0c67e4688fb458248762f76e61cd94530fe2952b25a47a740d230e15b8f,Charles,Ozoke,3185484570,403 Main street,09/29/2002,M,staff,YES
