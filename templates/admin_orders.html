@@ -1,0 +1,1023 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+/* ========== ORDERS DASHBOARD STYLES ========== */
+.orders-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.dashboard-header h1 {
+    font-size: 32px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a1a1a;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: #4caf50;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+/* Stats Cards */
+.order-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.stat-icon.total { background: linear-gradient(135deg, #667eea, #764ba2); }
+.stat-icon.pending { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.stat-icon.preparing { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+.stat-icon.ready { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+
+.stat-content .stat-number {
+    font-size: 32px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1;
+}
+
+.stat-content .stat-label {
+    font-size: 14px;
+    color: #888;
+    margin-top: 4px;
+}
+
+/* Order Pipeline */
+.pipeline-section {
+    margin-bottom: 32px;
+}
+
+.pipeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.pipeline-header h2 {
+    font-size: 20px;
+    margin: 0;
+}
+
+.view-toggle {
+    display: flex;
+    background: #f0f0f0;
+    border-radius: 10px;
+    padding: 4px;
+}
+
+.view-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.view-btn.active {
+    background: white;
+    color: #d6001c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Kanban Board View */
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.kanban-column {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 16px;
+    min-height: 400px;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.column-header.pending {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    color: #e65100;
+}
+
+.column-header.preparing {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #1565c0;
+}
+
+.column-header.ready {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    color: #2e7d32;
+}
+
+.column-count {
+    background: rgba(255,255,255,0.5);
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.kanban-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Order Cards */
+.order-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    transition: all 0.3s ease;
+    border-left: 4px solid #ddd;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.order-card.pending { border-left-color: #ff9800; }
+.order-card.preparing { border-left-color: #2196f3; }
+.order-card.ready { border-left-color: #4caf50; }
+.order-card.allergy { border-left-color: #f44336; background: #fff8f8; }
+
+.order-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.order-number {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+.order-time {
+    font-size: 12px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.order-customer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.customer-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #d6001c, #ff6b6b);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.customer-info .name {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 14px;
+}
+
+.customer-info .email {
+    font-size: 12px;
+    color: #888;
+}
+
+.order-items {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.order-items-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.order-items-list {
+    font-size: 14px;
+    color: #1a1a1a;
+    line-height: 1.5;
+}
+
+.order-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #1a1a1a;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.order-total .label {
+    color: #888;
+    font-size: 13px;
+}
+
+.order-total .amount {
+    color: #4caf50;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+/* Allergy Alert */
+.allergy-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid #ef9a9a;
+}
+
+.allergy-alert .alert-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.allergy-alert .alert-content {
+    flex: 1;
+}
+
+.allergy-alert .alert-title {
+    font-weight: 700;
+    color: #c62828;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.allergy-alert .alert-text {
+    font-size: 13px;
+    color: #b71c1c;
+}
+
+.safe-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+/* Action Buttons */
+.order-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.action-btn.start {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    color: white;
+}
+
+.action-btn.start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+.action-btn.complete {
+    background: linear-gradient(135deg, #4caf50, #388e3c);
+    color: white;
+}
+
+.action-btn.complete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.action-btn.done {
+    background: #f5f5f5;
+    color: #888;
+    cursor: default;
+}
+
+/* List View */
+.list-view {
+    display: none;
+}
+
+.list-view.active {
+    display: block;
+}
+
+.kanban-view {
+    display: none;
+}
+
+.kanban-view.active {
+    display: block;
+}
+
+.orders-table {
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.orders-table th {
+    background: #f8f9fa;
+    padding: 16px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.orders-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.orders-table tr:last-child td {
+    border-bottom: none;
+}
+
+.orders-table tr:hover td {
+    background: #fafafa;
+}
+
+.status-pill {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-pill.pending {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.status-pill.preparing {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.status-pill.ready {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+/* Search & Filters */
+.filters-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.search-box {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 14px 16px 14px 48px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #d6001c;
+}
+
+.search-box::before {
+    content: "🔍";
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+}
+
+.filter-select {
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #d6001c;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.empty-state .empty-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+}
+
+.empty-state p {
+    color: #888;
+    font-size: 16px;
+}
+
+/* Timeline indicator for cards */
+.order-timeline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.timeline-step {
+    flex: 1;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    transition: background 0.3s ease;
+}
+
+.timeline-step.active {
+    background: linear-gradient(90deg, #4caf50, #8bc34a);
+}
+
+.timeline-step.current {
+    background: linear-gradient(90deg, #2196f3, #03a9f4);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@media (max-width: 1024px) {
+    .kanban-board {
+        grid-template-columns: 1fr;
+    }
+    
+    .kanban-column {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .order-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filters-bar {
+        flex-direction: column;
+    }
+    
+    .search-box {
+        min-width: 100%;
+    }
+}
+</style>
+
+<div class="orders-dashboard">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div>
+            <h1>🍽️ Orders Dashboard</h1>
+            <p style="color: #888; margin: 4px 0 0; font-size: 14px;">Manage customer orders in real-time</p>
+        </div>
+        <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>Live Updates</span>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    {% set pending_count = orders|selectattr('status', 'undefined')|list|length + orders|selectattr('status', 'equalto', 'Pending')|list|length if orders else 0 %}
+    {% set preparing_count = orders|selectattr('status', 'equalto', 'Preparation Done')|list|length if orders else 0 %}
+    {% set ready_count = orders|selectattr('status', 'equalto', 'Ready for Delivery')|list|length if orders else 0 %}
+    
+    <div class="order-stats">
+        <div class="stat-card">
+            <div class="stat-icon total">📦</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ orders|length if orders else 0 }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon pending">⏳</div>
+            <div class="stat-content">
+                <div class="stat-number" id="pendingCount">{{ pending_count }}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon preparing">👨‍🍳</div>
+            <div class="stat-content">
+                <div class="stat-number" id="preparingCount">{{ preparing_count }}</div>
+                <div class="stat-label">Preparing</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon ready">✅</div>
+            <div class="stat-content">
+                <div class="stat-number" id="readyCount">{{ ready_count }}</div>
+                <div class="stat-label">Ready</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="filters-bar">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search by order ID, customer name, or email..." onkeyup="filterOrders()">
+        </div>
+        <select class="filter-select" id="statusFilter" onchange="filterOrders()">
+            <option value="all">All Status</option>
+            <option value="pending">⏳ Pending</option>
+            <option value="preparing">👨‍🍳 Preparing</option>
+            <option value="ready">✅ Ready</option>
+        </select>
+        <select class="filter-select" id="allergyFilter" onchange="filterOrders()">
+            <option value="all">All Orders</option>
+            <option value="allergy">⚠️ With Allergies</option>
+            <option value="safe">✓ No Allergies</option>
+        </select>
+    </div>
+
+    <!-- View Toggle & Pipeline Section -->
+    <div class="pipeline-section">
+        <div class="pipeline-header">
+            <h2>📋 Order Pipeline</h2>
+            <div class="view-toggle">
+                <button class="view-btn active" onclick="switchView('kanban')">🗂️ Kanban</button>
+                <button class="view-btn" onclick="switchView('list')">📋 List</button>
+            </div>
+        </div>
+
+        {% if orders|length == 0 %}
+        <div class="empty-state">
+            <div class="empty-icon">🍽️</div>
+            <h3>No Orders Yet</h3>
+            <p>When customers place orders, they'll appear here in real-time!</p>
+        </div>
+        {% else %}
+
+        <!-- Kanban View -->
+        <div class="kanban-view active" id="kanbanView">
+            <div class="kanban-board">
+                <!-- Pending Column -->
+                <div class="kanban-column">
+                    <div class="column-header pending">
+                        <span>⏳ New Orders</span>
+                        <span class="column-count" id="pendingColCount">0</span>
+                    </div>
+                    <div class="kanban-cards" id="pendingCards">
+                        {% for o in orders %}
+                        {% set status = o.status|default('Pending') %}
+                        {% if status == 'Pending' or status == '' %}
+                        <div class="order-card pending {% if o.allergy_info %}allergy{% endif %}" data-order-id="{{ o.order_id }}" data-customer="{{ o.customer_name }}" data-email="{{ o.customer_email }}" data-status="pending" data-allergy="{{ 'yes' if o.allergy_info else 'no' }}">
+                            <div class="order-timeline">
+                                <div class="timeline-step current"></div>
+                                <div class="timeline-step"></div>
+                                <div class="timeline-step"></div>
+                            </div>
+                            <div class="order-top">
+                                <span class="order-number">#{{ o.order_id }}</span>
+                                <span class="order-time">🕐 {{ o.timestamp }}</span>
+                            </div>
+                            <div class="order-customer">
+                                <div class="customer-avatar">{{ o.customer_name[0]|upper if o.customer_name else '?' }}</div>
+                                <div class="customer-info">
+                                    <div class="name">{{ o.customer_name }}</div>
+                                    <div class="email">{{ o.customer_email }}</div>
+                                </div>
+                            </div>
+                            <div class="order-items">
+                                <div class="order-items-title">Order Items</div>
+                                <div class="order-items-list">{{ o.item }}</div>
+                            </div>
+                            {% if o.allergy_info %}
+                            <div class="allergy-alert">
+                                <span class="alert-icon">⚠️</span>
+                                <div class="alert-content">
+                                    <div class="alert-title">Allergy Warning</div>
+                                    <div class="alert-text">{{ o.allergy_info }}</div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="safe-badge">✓ No allergies reported</div>
+                            {% endif %}
+                            <div class="order-actions">
+                                <form method="POST" action="{{ url_for('update_order_status') }}" style="flex: 1; display: flex;">
+                                    <input type="hidden" name="order_id" value="{{ o.order_id }}">
+                                    <input type="hidden" name="status" value="Preparation Done">
+                                    <input type="hidden" name="redirect" value="admin_orders">
+                                    <button type="submit" class="action-btn start">
+                                        👨‍🍳 Start Preparing
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Preparing Column -->
+                <div class="kanban-column">
+                    <div class="column-header preparing">
+                        <span>👨‍🍳 Preparing</span>
+                        <span class="column-count" id="preparingColCount">0</span>
+                    </div>
+                    <div class="kanban-cards" id="preparingCards">
+                        {% for o in orders %}
+                        {% set status = o.status|default('Pending') %}
+                        {% if status == 'Preparation Done' %}
+                        <div class="order-card preparing {% if o.allergy_info %}allergy{% endif %}" data-order-id="{{ o.order_id }}" data-customer="{{ o.customer_name }}" data-email="{{ o.customer_email }}" data-status="preparing" data-allergy="{{ 'yes' if o.allergy_info else 'no' }}">
+                            <div class="order-timeline">
+                                <div class="timeline-step active"></div>
+                                <div class="timeline-step current"></div>
+                                <div class="timeline-step"></div>
+                            </div>
+                            <div class="order-top">
+                                <span class="order-number">#{{ o.order_id }}</span>
+                                <span class="order-time">🕐 {{ o.timestamp }}</span>
+                            </div>
+                            <div class="order-customer">
+                                <div class="customer-avatar">{{ o.customer_name[0]|upper if o.customer_name else '?' }}</div>
+                                <div class="customer-info">
+                                    <div class="name">{{ o.customer_name }}</div>
+                                    <div class="email">{{ o.customer_email }}</div>
+                                </div>
+                            </div>
+                            <div class="order-items">
+                                <div class="order-items-title">Order Items</div>
+                                <div class="order-items-list">{{ o.item }}</div>
+                            </div>
+                            {% if o.allergy_info %}
+                            <div class="allergy-alert">
+                                <span class="alert-icon">⚠️</span>
+                                <div class="alert-content">
+                                    <div class="alert-title">Allergy Warning</div>
+                                    <div class="alert-text">{{ o.allergy_info }}</div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="safe-badge">✓ No allergies reported</div>
+                            {% endif %}
+                            <div class="order-actions">
+                                <form method="POST" action="{{ url_for('update_order_status') }}" style="flex: 1; display: flex;">
+                                    <input type="hidden" name="order_id" value="{{ o.order_id }}">
+                                    <input type="hidden" name="status" value="Ready for Delivery">
+                                    <input type="hidden" name="redirect" value="admin_orders">
+                                    <button type="submit" class="action-btn complete">
+                                        ✅ Mark Ready
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Ready Column -->
+                <div class="kanban-column">
+                    <div class="column-header ready">
+                        <span>✅ Ready for Pickup</span>
+                        <span class="column-count" id="readyColCount">0</span>
+                    </div>
+                    <div class="kanban-cards" id="readyCards">
+                        {% for o in orders %}
+                        {% set status = o.status|default('Pending') %}
+                        {% if status == 'Ready for Delivery' %}
+                        <div class="order-card ready {% if o.allergy_info %}allergy{% endif %}" data-order-id="{{ o.order_id }}" data-customer="{{ o.customer_name }}" data-email="{{ o.customer_email }}" data-status="ready" data-allergy="{{ 'yes' if o.allergy_info else 'no' }}">
+                            <div class="order-timeline">
+                                <div class="timeline-step active"></div>
+                                <div class="timeline-step active"></div>
+                                <div class="timeline-step active"></div>
+                            </div>
+                            <div class="order-top">
+                                <span class="order-number">#{{ o.order_id }}</span>
+                                <span class="order-time">🕐 {{ o.timestamp }}</span>
+                            </div>
+                            <div class="order-customer">
+                                <div class="customer-avatar">{{ o.customer_name[0]|upper if o.customer_name else '?' }}</div>
+                                <div class="customer-info">
+                                    <div class="name">{{ o.customer_name }}</div>
+                                    <div class="email">{{ o.customer_email }}</div>
+                                </div>
+                            </div>
+                            <div class="order-items">
+                                <div class="order-items-title">Order Items</div>
+                                <div class="order-items-list">{{ o.item }}</div>
+                            </div>
+                            {% if o.allergy_info %}
+                            <div class="allergy-alert">
+                                <span class="alert-icon">⚠️</span>
+                                <div class="alert-content">
+                                    <div class="alert-title">Allergy Warning</div>
+                                    <div class="alert-text">{{ o.allergy_info }}</div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="safe-badge">✓ No allergies reported</div>
+                            {% endif %}
+                            <div class="order-actions">
+                                <button class="action-btn done" disabled>
+                                    🎉 Ready for Customer
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- List View -->
+        <div class="list-view" id="listView">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Allergies</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in orders %}
+                    {% set status = o.status|default('Pending') %}
+                    <tr class="order-row" data-order-id="{{ o.order_id }}" data-customer="{{ o.customer_name }}" data-email="{{ o.customer_email }}" data-status="{{ status|lower|replace(' ', '-') }}" data-allergy="{{ 'yes' if o.allergy_info else 'no' }}">
+                        <td><strong>#{{ o.order_id }}</strong></td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="customer-avatar" style="width: 32px; height: 32px; font-size: 12px;">{{ o.customer_name[0]|upper if o.customer_name else '?' }}</div>
+                                <div>
+                                    <div style="font-weight: 600;">{{ o.customer_name }}</div>
+                                    <div style="font-size: 12px; color: #888;">{{ o.customer_email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="max-width: 200px;">{{ o.item }}</td>
+                        <td>
+                            {% if o.allergy_info %}
+                            <span style="color: #f44336;">⚠️ {{ o.allergy_info }}</span>
+                            {% else %}
+                            <span style="color: #4caf50;">✓ None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="status-pill {% if status == 'Pending' %}pending{% elif status == 'Preparation Done' %}preparing{% else %}ready{% endif %}">
+                                {% if status == 'Pending' %}⏳{% elif status == 'Preparation Done' %}👨‍🍳{% else %}✅{% endif %}
+                                {{ status }}
+                            </span>
+                        </td>
+                        <td style="font-size: 13px; color: #888;">{{ o.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Update column counts
+function updateCounts() {
+    document.getElementById('pendingColCount').textContent = document.querySelectorAll('#pendingCards .order-card').length;
+    document.getElementById('preparingColCount').textContent = document.querySelectorAll('#preparingCards .order-card').length;
+    document.getElementById('readyColCount').textContent = document.querySelectorAll('#readyCards .order-card').length;
+}
+
+// View switching
+function switchView(view) {
+    document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    if (view === 'kanban') {
+        document.getElementById('kanbanView').classList.add('active');
+        document.getElementById('listView').classList.remove('active');
+    } else {
+        document.getElementById('kanbanView').classList.remove('active');
+        document.getElementById('listView').classList.add('active');
+    }
+}
+
+// Filter orders
+function filterOrders() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const allergyFilter = document.getElementById('allergyFilter').value;
+    
+    // Filter kanban cards
+    document.querySelectorAll('.order-card').forEach(card => {
+        const orderId = card.dataset.orderId?.toLowerCase() || '';
+        const customer = card.dataset.customer?.toLowerCase() || '';
+        const email = card.dataset.email?.toLowerCase() || '';
+        const status = card.dataset.status || '';
+        const hasAllergy = card.dataset.allergy === 'yes';
+        
+        const matchesSearch = orderId.includes(searchTerm) || 
+                             customer.includes(searchTerm) || 
+                             email.includes(searchTerm);
+        
+        const matchesStatus = statusFilter === 'all' || status === statusFilter;
+        
+        const matchesAllergy = allergyFilter === 'all' || 
+                              (allergyFilter === 'allergy' && hasAllergy) ||
+                              (allergyFilter === 'safe' && !hasAllergy);
+        
+        card.style.display = (matchesSearch && matchesStatus && matchesAllergy) ? 'block' : 'none';
+    });
+    
+    // Filter table rows
+    document.querySelectorAll('.order-row').forEach(row => {
+        const orderId = row.dataset.orderId?.toLowerCase() || '';
+        const customer = row.dataset.customer?.toLowerCase() || '';
+        const email = row.dataset.email?.toLowerCase() || '';
+        const status = row.dataset.status?.replace('-', ' ') || '';
+        const hasAllergy = row.dataset.allergy === 'yes';
+        
+        const matchesSearch = orderId.includes(searchTerm) || 
+                             customer.includes(searchTerm) || 
+                             email.includes(searchTerm);
+        
+        let matchesStatus = statusFilter === 'all';
+        if (statusFilter === 'pending' && status === 'pending') matchesStatus = true;
+        if (statusFilter === 'preparing' && status === 'preparation done') matchesStatus = true;
+        if (statusFilter === 'ready' && status === 'ready for delivery') matchesStatus = true;
+        
+        const matchesAllergy = allergyFilter === 'all' || 
+                              (allergyFilter === 'allergy' && hasAllergy) ||
+                              (allergyFilter === 'safe' && !hasAllergy);
+        
+        row.style.display = (matchesSearch && matchesStatus && matchesAllergy) ? 'table-row' : 'none';
+    });
+    
+    updateCounts();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateCounts();
+});
+</script>
+
+{% endblock %}

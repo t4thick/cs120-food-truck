@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header">
+    <h1>🍽️ Menu</h1>
+    <a href="{{ url_for('cart_page') }}" class="button cart-header-btn">
+        <span class="cart-icon">🛒</span>
+        <span>Cart</span>
+        <span class="cart-badge" id="cartBadge">{{ cart_count or 0 }}</span>
+    </a>
+</div>
+<p class="section-subtitle">Browse all items from the food truck and add them to your cart. Swipe or use arrows to navigate!</p>
+
+<section class="menu-section">
+    {% if categories %}
+        {% for category, items in categories.items() %}
+            <div class="menu-category-section" style="margin-bottom: 50px;">
+                <div class="category-header">
+                    <h2 class="menu-category-title">{{ category }}</h2>
+                    <div class="carousel-indicators" id="indicators-{{ loop.index0 }}">
+                        <span class="carousel-dot active" data-slide="0"></span>
+                    </div>
+                </div>
+                
+                <div class="menu-carousel-wrapper">
+                    <button class="carousel-btn carousel-btn-prev" onclick="scrollCarousel('{{ loop.index0 }}', -1)" aria-label="Previous">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    
+                    <div class="menu-carousel" id="carousel-{{ loop.index0 }}" data-category="{{ category }}">
+                        <div class="menu-carousel-track">
+                            {% for item in items %}
+                            <div class="menu-card" data-item="{{ item.name }}" data-price="{{ item.price }}">
+                                <div class="menu-card-image">
+                                    <img src="{{ url_for('static', filename='images/' ~ item.image) }}" alt="{{ item.name }}" loading="lazy">
+                                    {% if item.vegan %}
+                                    <span class="vegan-badge">🌱</span>
+                                    {% endif %}
+                                </div>
+                                <div class="menu-card-content">
+                                    <h3>{{ item.name }}</h3>
+                                    <p class="menu-description">{{ item.description }}</p>
+                                    <div class="menu-tags">
+                                        {% if item.category == "Combo" %}
+                                            <span class="menu-tag">Combo Deal</span>
+                                        {% endif %}
+                                        {% if item.vegan %}
+                                            <span class="menu-tag vegan">Vegan</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="menu-card-footer">
+                                        <p class="price">${{ "%.2f"|format(item.price) }}</p>
+                                        <div class="qty-controls">
+                                            <button type="button" class="qty-btn minus" onclick="changeQty(this, -1)">−</button>
+                                            <span class="qty-display">1</span>
+                                            <button type="button" class="qty-btn plus" onclick="changeQty(this, 1)">+</button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="button add-to-cart-btn" onclick="addToCart(this)">
+                                        <span class="btn-text">Add to Cart</span>
+                                        <span class="btn-icon">✓</span>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <button class="carousel-btn carousel-btn-next" onclick="scrollCarousel('{{ loop.index0 }}', 1)" aria-label="Next">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="menu-carousel-wrapper">
+            <button class="carousel-btn carousel-btn-prev" onclick="scrollCarousel('0', -1)" aria-label="Previous">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            
+            <div class="menu-carousel" id="carousel-0">
+                <div class="menu-carousel-track">
+                    {% for item in menu_items %}
+                    <div class="menu-card" data-item="{{ item.name }}" data-price="{{ item.price }}">
+                        <div class="menu-card-image">
+                            <img src="{{ url_for('static', filename='images/' ~ item.image) }}" alt="{{ item.name }}" loading="lazy">
+                            {% if item.vegan %}
+                            <span class="vegan-badge">🌱</span>
+                            {% endif %}
+                        </div>
+                        <div class="menu-card-content">
+                            <h3>{{ item.name }}</h3>
+                            <p class="menu-description">{{ item.description }}</p>
+                            <div class="menu-tags">
+                                {% if item.category == "Non-Veg" %}
+                                    <span class="menu-tag">Signature</span>
+                                {% endif %}
+                                {% if item.vegan %}
+                                    <span class="menu-tag vegan">Vegan</span>
+                                {% endif %}
+                            </div>
+                            <div class="menu-card-footer">
+                                <p class="price">${{ "%.2f"|format(item.price) }}</p>
+                                <div class="qty-controls">
+                                    <button type="button" class="qty-btn minus" onclick="changeQty(this, -1)">−</button>
+                                    <span class="qty-display">1</span>
+                                    <button type="button" class="qty-btn plus" onclick="changeQty(this, 1)">+</button>
+                                </div>
+                            </div>
+                            <button type="button" class="button add-to-cart-btn" onclick="addToCart(this)">
+                                <span class="btn-text">Add to Cart</span>
+                                <span class="btn-icon">✓</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <button class="carousel-btn carousel-btn-next" onclick="scrollCarousel('0', 1)" aria-label="Next">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+    {% endif %}
+</section>
+
+<script>
+// Quantity controls
+function changeQty(btn, delta) {
+    const controls = btn.parentElement;
+    const display = controls.querySelector('.qty-display');
+    let qty = parseInt(display.textContent) + delta;
+    if (qty < 1) qty = 1;
+    if (qty > 10) qty = 10;
+    display.textContent = qty;
+    
+    // Animate the number
+    display.classList.add('qty-bump');
+    setTimeout(() => display.classList.remove('qty-bump'), 150);
+}
+
+// Add to cart with animation
+async function addToCart(btn) {
+    const card = btn.closest('.menu-card');
+    const itemName = card.dataset.item;
+    const price = parseFloat(card.dataset.price);
+    const qty = parseInt(card.querySelector('.qty-display').textContent);
+    
+    // Animate button
+    btn.classList.add('loading');
+    
+    try {
+        // Add items one by one (API adds 1 at a time)
+        for (let i = 0; i < qty; i++) {
+            const response = await fetch('/api/cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_name: itemName, price: price })
+            });
+            
+            if (!response.ok) throw new Error('Failed to add item');
+        }
+        
+        // Success animation
+        btn.classList.remove('loading');
+        btn.classList.add('success');
+        
+        // Update cart badge
+        updateCartBadge();
+        
+        // Show toast
+        showToast(`Added ${qty}x ${itemName} to cart!`, 'success');
+        
+        // Flying animation to cart
+        flyToCart(card);
+        
+        // Reset button after delay
+        setTimeout(() => {
+            btn.classList.remove('success');
+            card.querySelector('.qty-display').textContent = '1';
+        }, 1500);
+        
+    } catch (error) {
+        btn.classList.remove('loading');
+        showToast('Failed to add item. Please try again.', 'error');
+    }
+}
+
+// Update cart badge count
+async function updateCartBadge() {
+    try {
+        const response = await fetch('/api/cart');
+        const data = await response.json();
+        const totalItems = data.items ? data.items.reduce((sum, item) => sum + item.qty, 0) : 0;
+        const badge = document.getElementById('cartBadge');
+        badge.textContent = totalItems;
+        badge.classList.add('badge-bump');
+        setTimeout(() => badge.classList.remove('badge-bump'), 300);
+    } catch (e) {
+        console.error('Failed to update cart badge', e);
+    }
+}
+
+// Flying animation effect
+function flyToCart(card) {
+    const img = card.querySelector('img');
+    const cartBtn = document.querySelector('.cart-header-btn');
+    
+    if (!img || !cartBtn) return;
+    
+    const imgRect = img.getBoundingClientRect();
+    const cartRect = cartBtn.getBoundingClientRect();
+    
+    const flyingItem = document.createElement('div');
+    flyingItem.className = 'flying-item';
+    flyingItem.style.backgroundImage = `url(${img.src})`;
+    flyingItem.style.left = imgRect.left + 'px';
+    flyingItem.style.top = imgRect.top + 'px';
+    flyingItem.style.width = imgRect.width + 'px';
+    flyingItem.style.height = imgRect.height + 'px';
+    
+    document.body.appendChild(flyingItem);
+    
+    // Animate to cart
+    requestAnimationFrame(() => {
+        flyingItem.style.left = cartRect.left + cartRect.width / 2 + 'px';
+        flyingItem.style.top = cartRect.top + 'px';
+        flyingItem.style.width = '20px';
+        flyingItem.style.height = '20px';
+        flyingItem.style.opacity = '0';
+        flyingItem.style.transform = 'rotate(360deg)';
+    });
+    
+    setTimeout(() => flyingItem.remove(), 600);
+}
+
+// Toast notifications
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+        <span class="toast-message">${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Trigger animation
+    requestAnimationFrame(() => toast.classList.add('show'));
+    
+    // Auto remove
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Carousel functionality with swipe support
+let carouselPositions = {};
+
+function initCarousels() {
+    document.querySelectorAll('.menu-carousel').forEach((carousel, index) => {
+        carouselPositions[index] = 0;
+        updateCarouselButtons(index);
+        setupSwipe(carousel, index);
+    });
+}
+
+function scrollCarousel(carouselId, direction) {
+    const carousel = document.getElementById(`carousel-${carouselId}`);
+    if (!carousel) return;
+    
+    const track = carousel.querySelector('.menu-carousel-track');
+    const cards = track.querySelectorAll('.menu-card');
+    const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+    const visibleCards = Math.floor(carousel.offsetWidth / cardWidth);
+    const totalCards = cards.length;
+    const maxPosition = Math.max(0, totalCards - visibleCards);
+    
+    carouselPositions[carouselId] += direction;
+    carouselPositions[carouselId] = Math.max(0, Math.min(carouselPositions[carouselId], maxPosition));
+    
+    const scrollAmount = carouselPositions[carouselId] * cardWidth;
+    track.style.transform = `translateX(-${scrollAmount}px)`;
+    
+    updateCarouselButtons(carouselId);
+    updateIndicators(carouselId, totalCards, visibleCards);
+}
+
+function updateCarouselButtons(carouselId) {
+    const carousel = document.getElementById(`carousel-${carouselId}`);
+    if (!carousel) return;
+    
+    const track = carousel.querySelector('.menu-carousel-track');
+    const cards = track.querySelectorAll('.menu-card');
+    const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+    const visibleCards = Math.floor(carousel.offsetWidth / cardWidth);
+    const totalCards = cards.length;
+    const maxPosition = Math.max(0, totalCards - visibleCards);
+    
+    const prevBtn = carousel.parentElement.querySelector('.carousel-btn-prev');
+    const nextBtn = carousel.parentElement.querySelector('.carousel-btn-next');
+    
+    if (prevBtn) {
+        prevBtn.style.opacity = carouselPositions[carouselId] <= 0 ? '0.3' : '1';
+        prevBtn.disabled = carouselPositions[carouselId] <= 0;
+    }
+    
+    if (nextBtn) {
+        nextBtn.style.opacity = carouselPositions[carouselId] >= maxPosition ? '0.3' : '1';
+        nextBtn.disabled = carouselPositions[carouselId] >= maxPosition;
+    }
+}
+
+function updateIndicators(carouselId, totalCards, visibleCards) {
+    const indicators = document.getElementById(`indicators-${carouselId}`);
+    if (!indicators) return;
+    
+    const totalSlides = Math.ceil(totalCards / visibleCards);
+    indicators.innerHTML = '';
+    
+    for (let i = 0; i < totalSlides; i++) {
+        const dot = document.createElement('span');
+        dot.className = 'carousel-dot';
+        if (i === Math.floor(carouselPositions[carouselId] / visibleCards)) {
+            dot.classList.add('active');
+        }
+        dot.onclick = () => {
+            carouselPositions[carouselId] = i * visibleCards;
+            const carousel = document.getElementById(`carousel-${carouselId}`);
+            const track = carousel.querySelector('.menu-carousel-track');
+            const cards = track.querySelectorAll('.menu-card');
+            const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+            const scrollAmount = carouselPositions[carouselId] * cardWidth;
+            track.style.transform = `translateX(-${scrollAmount}px)`;
+            updateCarouselButtons(carouselId);
+            updateIndicators(carouselId, totalCards, visibleCards);
+        };
+        indicators.appendChild(dot);
+    }
+}
+
+function setupSwipe(carousel, carouselId) {
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    
+    carousel.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+    }, { passive: true });
+    
+    carousel.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX;
+        const diff = startX - currentX;
+        const track = carousel.querySelector('.menu-carousel-track');
+        const cards = track.querySelectorAll('.menu-card');
+        const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+        const currentScroll = carouselPositions[carouselId] * cardWidth;
+        track.style.transform = `translateX(-${currentScroll + diff}px)`;
+    }, { passive: true });
+    
+    carousel.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const diff = startX - currentX;
+        const threshold = 50;
+        
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0) {
+                scrollCarousel(carouselId, 1);
+            } else {
+                scrollCarousel(carouselId, -1);
+            }
+        } else {
+            const track = carousel.querySelector('.menu-carousel-track');
+            const cards = track.querySelectorAll('.menu-card');
+            const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+            const scrollAmount = carouselPositions[carouselId] * cardWidth;
+            track.style.transform = `translateX(-${scrollAmount}px)`;
+        }
+    });
+    
+    // Mouse drag support
+    let mouseStartX = 0;
+    let mouseCurrentX = 0;
+    let isMouseDragging = false;
+    
+    carousel.addEventListener('mousedown', (e) => {
+        mouseStartX = e.clientX;
+        isMouseDragging = true;
+        carousel.style.cursor = 'grabbing';
+    });
+    
+    carousel.addEventListener('mousemove', (e) => {
+        if (!isMouseDragging) return;
+        mouseCurrentX = e.clientX;
+        const diff = mouseStartX - mouseCurrentX;
+        const track = carousel.querySelector('.menu-carousel-track');
+        const cards = track.querySelectorAll('.menu-card');
+        const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+        const currentScroll = carouselPositions[carouselId] * cardWidth;
+        track.style.transform = `translateX(-${currentScroll + diff}px)`;
+    });
+    
+    carousel.addEventListener('mouseup', () => {
+        if (!isMouseDragging) return;
+        isMouseDragging = false;
+        carousel.style.cursor = 'grab';
+        
+        const diff = mouseStartX - mouseCurrentX;
+        const threshold = 50;
+        
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0) {
+                scrollCarousel(carouselId, 1);
+            } else {
+                scrollCarousel(carouselId, -1);
+            }
+        } else {
+            const track = carousel.querySelector('.menu-carousel-track');
+            const cards = track.querySelectorAll('.menu-card');
+            const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+            const scrollAmount = carouselPositions[carouselId] * cardWidth;
+            track.style.transform = `translateX(-${scrollAmount}px)`;
+        }
+    });
+    
+    carousel.addEventListener('mouseleave', () => {
+        if (isMouseDragging) {
+            isMouseDragging = false;
+            carousel.style.cursor = 'grab';
+            const track = carousel.querySelector('.menu-carousel-track');
+            const cards = track.querySelectorAll('.menu-card');
+            const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+            const scrollAmount = carouselPositions[carouselId] * cardWidth;
+            track.style.transform = `translateX(-${scrollAmount}px)`;
+        }
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initCarousels();
+    
+    // Update on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            document.querySelectorAll('.menu-carousel').forEach((carousel, index) => {
+                const track = carousel.querySelector('.menu-carousel-track');
+                const cards = track.querySelectorAll('.menu-card');
+                const cardWidth = cards[0] ? cards[0].offsetWidth + 18 : 268;
+                const scrollAmount = carouselPositions[index] * cardWidth;
+                track.style.transform = `translateX(-${scrollAmount}px)`;
+                updateCarouselButtons(index);
+            });
+        }, 250);
+    });
+});
+</script>
+
+{% endblock %}
