@@ -70,7 +70,7 @@ This application has been enhanced with:
 - **Unit tests** for critical functions
 - **Email verification** with 4-digit codes (optional, requires SMTP configuration)
 
-See `IMPROVEMENTS_SUMMARY.md` for complete details.
+All improvements are integrated into the main codebase.
 
 ### Deployment
 

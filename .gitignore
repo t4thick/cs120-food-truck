@@ -18,6 +18,11 @@ ENV/
 # Logs
 *.log
 logs/
+ft_management.log
+
+# Data files (keep structure but ignore actual data in production)
+# Uncomment if you want to exclude CSV data files:
+# data/*.csv
 
 # OS
 .DS_Store
