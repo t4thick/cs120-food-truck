@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Order Tracking</h1>
+    
+    {% if order %}
+    <div class="order-details">
+        <h2>Order #{{ order.order_id }}</h2>
+        
+        <div class="order-status">
+            <strong>Status:</strong> 
+            <span class="status-badge status-{{ order.status.lower().replace(' ', '-') }}">
+                {{ order.status }}
+            </span>
+        </div>
+        
+        <div class="order-info">
+            <p><strong>Placed:</strong> {{ order.timestamp }}</p>
+            <p><strong>Items:</strong> {{ order.item }}</p>
+            {% if order.allergy_info %}
+            <p><strong>Allergy Notes:</strong> {{ order.allergy_info }}</p>
+            {% endif %}
+            {% if order.total %}
+            <p><strong>Total:</strong> ${{ "%.2f"|format(order.total) }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="status-timeline">
+            <h3>Order Progress</h3>
+            <ul>
+                <li class="{% if order.status == 'Pending' or order.status == 'Preparation Done' or order.status == 'Ready for Delivery' %}active{% endif %}">
+                    Order Placed
+                </li>
+                <li class="{% if order.status == 'Preparation Done' or order.status == 'Ready for Delivery' %}active{% endif %}">
+                    Preparation
+                </li>
+                <li class="{% if order.status == 'Ready for Delivery' %}active{% endif %}">
+                    Ready for Delivery
+                </li>
+            </ul>
+        </div>
+        
+        <a href="{{ url_for('order_history') }}" class="btn">Back to Order History</a>
+    </div>
+    {% else %}
+    <p>Order not found.</p>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h1 class="auth-title">Verify Your Email</h1>
+        <p class="auth-subtitle">
+            We've sent a 4-digit verification code to:<br>
+            <strong>{{ email }}</strong>
+        </p>
+        
+        {% if code_info %}
+        <p style="font-size: 13px; color: #666; margin-top: 8px;">
+            {% set time_diff = (code_info.expires_at - now()) %}
+            {% set minutes_left = (time_diff.total_seconds() / 60) | round | int %}
+            Code expires in {{ minutes_left }} minute{% if minutes_left != 1 %}s{% endif %}
+            {% if code_info.attempts > 0 %}
+            <br>Failed attempts: {{ code_info.attempts }}/{{ code_info.max_attempts }}
+            {% endif %}
+        </p>
+        {% endif %}
+        
+        <form method="POST" action="{{ url_for('verify_email') }}" class="auth-form">
+            <div style="margin-bottom: 20px;">
+                <label for="code" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                    Enter Verification Code:
+                </label>
+                <input 
+                    type="text" 
+                    id="code" 
+                    name="code" 
+                    maxlength="4" 
+                    pattern="[0-9]{4}"
+                    required 
+                    autofocus
+                    autocomplete="off"
+                    style="
+                        width: 100%;
+                        padding: 12px;
+                        font-size: 24px;
+                        text-align: center;
+                        letter-spacing: 8px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        font-family: 'Courier New', monospace;
+                    "
+                    placeholder="0000"
+                >
+                <p style="font-size: 12px; color: #666; margin-top: 4px;">
+                    Enter the 4-digit code from your email
+                </p>
+            </div>
+            
+            <button type="submit" class="button" style="width: 100%; margin-bottom: 12px;">
+                Verify Email
+            </button>
+        </form>
+        
+        <form method="POST" action="{{ url_for('resend_verification_code') }}" style="margin-top: 16px;">
+            <button type="submit" class="button secondary" style="width: 100%;">
+                Resend Code
+            </button>
+        </form>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="{{ url_for('logout') }}" style="color: #666; text-decoration: none; font-size: 14px;">
+                Use a different account
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-focus and format code input
+document.addEventListener('DOMContentLoaded', function() {
+    const codeInput = document.getElementById('code');
+    
+    // Only allow digits
+    codeInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+    
+    // Auto-submit when 4 digits entered (optional)
+    codeInput.addEventListener('input', function(e) {
+        if (this.value.length === 4) {
+            // Optional: auto-submit
+            // this.form.submit();
+        }
+    });
+});
+</script>
+{% endblock %}
+

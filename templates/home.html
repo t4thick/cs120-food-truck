@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="hero">
+    <!-- Floating food icons for visual interest -->
+    <span class="hero-floating">🍔</span>
+    <span class="hero-floating">🍟</span>
+    <span class="hero-floating">🌮</span>
+    <span class="hero-floating">🍗</span>
+    <span class="hero-floating">🥤</span>
+    
+    <div class="hero-text">
+        <div class="hero-kicker">🔥 Hot & Fresh on Campus</div>
+        <div class="hero-title">{{ truck.name }}</div>
+        <div class="hero-subtitle">
+            Craving crispy chicken, wings, or a quick combo? Order online and pick up at
+            <strong>{{ truck.location }}</strong>. We keep track of allergies so your food is both
+            delicious and safe.
+        </div>
+        <div class="hero-buttons">
+            <a href="{{ url_for('menu_page') }}" class="button hero-btn-primary">
+                <span>🛒</span> Order Now
+            </a>
+            <a href="{{ url_for('cart_page') }}" class="button secondary">
+                View Cart{% if cart_count %} <span class="hero-cart-count">({{ cart_count }})</span>{% endif %}
+            </a>
+        </div>
+        <div class="hero-meta">
+            <span class="hero-stat">👨‍🍳 {{ staff_count }} Staff</span>
+            <span class="hero-stat">📅 {{ schedule_count }} Shifts</span>
+        </div>
+    </div>
+    <div class="hero-image">
+        <img src="{{ url_for('static', filename='images/logo-hero.svg') }}" alt="Item7 Food Truck logo" onerror="this.src='{{ url_for('static', filename='images/logo.svg') }}'">
+    </div>
+</div>
+
+<section class="menu-section">
+    <div class="section-header">
+        <div>
+            <h2>🍽️ Popular Picks</h2>
+            <div class="section-subtitle">Customer favorites from your food truck menu.</div>
+        </div>
+        <a href="{{ url_for('menu_page') }}" class="button secondary">See Full Menu →</a>
+    </div>
+
+    <div class="menu-grid home-menu-grid">
+        {% if featured_items %}
+            {% for item in featured_items %}
+            <div class="menu-card" data-item="{{ item.name }}" data-price="{{ item.price }}">
+                <div class="menu-card-image">
+                    <img src="{{ url_for('static', filename='images/' ~ item.image) }}" alt="{{ item.name }}" loading="lazy" onload="this.classList.add('loaded')">
+                    {% if item.vegan %}
+                    <span class="vegan-badge">🌱</span>
+                    {% endif %}
+                </div>
+                <div class="menu-card-content">
+                    <h3>{{ item.name }}</h3>
+                    <p class="menu-description">{{ item.description }}</p>
+                    <div class="menu-tags">
+                        {% if item.category == "Non-Veg" %}
+                            <span class="menu-tag">Crispy</span>
+                        {% endif %}
+                        {% if item.vegan %}
+                            <span class="menu-tag vegan">Plant-Based</span>
+                        {% endif %}
+                    </div>
+                    <div class="menu-card-footer">
+                        <p class="price">${{ "%.2f"|format(item.price) }}</p>
+                        <div class="qty-controls">
+                            <button type="button" class="qty-btn minus" onclick="changeQty(this, -1)">−</button>
+                            <span class="qty-display">1</span>
+                            <button type="button" class="qty-btn plus" onclick="changeQty(this, 1)">+</button>
+                        </div>
+                    </div>
+                    <button type="button" class="button add-to-cart-btn" onclick="addToCart(this)">
+                        <span class="btn-text">Add to Cart</span>
+                        <span class="btn-icon">✓</span>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="menu-empty" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                <p style="font-size: 18px; color: #666; margin-bottom: 16px;">🍽️ Menu items are being loaded...</p>
+                <a href="{{ url_for('menu_page') }}" class="button">View Full Menu</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Contact & Location Section -->
+<section class="contact-section">
+    <div class="contact-grid">
+        <div class="contact-card">
+            <div class="contact-icon">📍</div>
+            <h3>Find Us</h3>
+            <p class="contact-info">Grambling State University</p>
+            <p class="contact-detail">{{ truck.location }}</p>
+        </div>
+        <div class="contact-card">
+            <div class="contact-icon">📞</div>
+            <h3>Call Us</h3>
+            <p class="contact-info">
+                <a href="tel:6142904260" class="phone-link">(614) 290-4260</a>
+            </p>
+            <p class="contact-detail">Open for lunch & late-night cravings</p>
+        </div>
+        <div class="contact-card">
+            <div class="contact-icon">🕐</div>
+            <h3>Hours</h3>
+            <p class="contact-info">Monday - Friday</p>
+            <p class="contact-detail">11:00 AM - 10:00 PM</p>
+        </div>
+    </div>
+</section>
+
+<!-- Active Deals & Social Media Section -->
+<section class="social-section">
+    <div class="section-header">
+        <div>
+            <h2>🎉 Special Deals & Promotions</h2>
+            <div class="section-subtitle">Check out our latest offers and promotions!</div>
+        </div>
+    </div>
+    
+    {% if active_deals %}
+    <div class="deals-feed">
+        {% for deal in active_deals %}
+        <div class="deal-card">
+            <div class="deal-badge">🔥 HOT DEAL</div>
+            <div class="deal-content">
+                <h3>{{ deal.title }}</h3>
+                <p class="deal-description">{{ deal.description }}</p>
+                <div class="deal-discount">
+                    <span class="discount-amount">{{ deal.discount }}</span>
+                </div>
+                <div class="deal-cta" style="color: #d6001c; font-weight: 600;">
+                    🔥 Limited Time Offer
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-deals">
+        <p>No active deals at the moment. Check back soon for special offers!</p>
+    </div>
+    {% endif %}
+</section>
+
+<script>
+// Quantity controls
+function changeQty(btn, delta) {
+    const controls = btn.parentElement;
+    const display = controls.querySelector('.qty-display');
+    let qty = parseInt(display.textContent) + delta;
+    if (qty < 1) qty = 1;
+    if (qty > 10) qty = 10;
+    display.textContent = qty;
+    
+    display.classList.add('qty-bump');
+    setTimeout(() => display.classList.remove('qty-bump'), 150);
+}
+
+// Add to cart with animation
+async function addToCart(btn) {
+    const card = btn.closest('.menu-card');
+    const itemName = card.dataset.item;
+    const price = parseFloat(card.dataset.price);
+    const qty = parseInt(card.querySelector('.qty-display').textContent);
+    
+    btn.classList.add('loading');
+    
+    try {
+        for (let i = 0; i < qty; i++) {
+            const response = await fetch('/api/cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_name: itemName, price: price })
+            });
+            
+            if (!response.ok) throw new Error('Failed to add item');
+        }
+        
+        btn.classList.remove('loading');
+        btn.classList.add('success');
+        
+        showToast(`Added ${qty}x ${itemName} to cart!`, 'success');
+        flyToCart(card);
+        
+        setTimeout(() => {
+            btn.classList.remove('success');
+            card.querySelector('.qty-display').textContent = '1';
+        }, 1500);
+        
+    } catch (error) {
+        btn.classList.remove('loading');
+        showToast('Failed to add item. Please try again.', 'error');
+    }
+}
+
+// Flying animation effect
+function flyToCart(card) {
+    const img = card.querySelector('img');
+    const cartBtn = document.querySelector('.hero-buttons .secondary');
+    
+    if (!img || !cartBtn) return;
+    
+    const imgRect = img.getBoundingClientRect();
+    const cartRect = cartBtn.getBoundingClientRect();
+    
+    const flyingItem = document.createElement('div');
+    flyingItem.className = 'flying-item';
+    flyingItem.style.backgroundImage = `url(${img.src})`;
+    flyingItem.style.left = imgRect.left + 'px';
+    flyingItem.style.top = imgRect.top + 'px';
+    flyingItem.style.width = imgRect.width + 'px';
+    flyingItem.style.height = imgRect.height + 'px';
+    
+    document.body.appendChild(flyingItem);
+    
+    requestAnimationFrame(() => {
+        flyingItem.style.left = cartRect.left + cartRect.width / 2 + 'px';
+        flyingItem.style.top = cartRect.top + 'px';
+        flyingItem.style.width = '20px';
+        flyingItem.style.height = '20px';
+        flyingItem.style.opacity = '0';
+        flyingItem.style.transform = 'rotate(360deg)';
+    });
+    
+    setTimeout(() => flyingItem.remove(), 600);
+}
+
+// Toast notifications
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+        <span class="toast-message">${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Animate menu cards and deals on scroll
+document.addEventListener('DOMContentLoaded', function() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 100);
+            }
+        });
+    }, observerOptions);
+    
+    // Observe menu cards
+    document.querySelectorAll('.menu-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(card);
+    });
+    
+    // Observe deal cards
+    document.querySelectorAll('.deal-card').forEach(deal => {
+        deal.style.opacity = '0';
+        deal.style.transform = 'translateY(20px)';
+        deal.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(deal);
+    });
+    
+    // Observe contact cards
+    document.querySelectorAll('.contact-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(card);
+    });
+    
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href !== '#' && href.length > 1) {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}
